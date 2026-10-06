@@ -148,7 +148,7 @@ jobs:
         with:
           node-version: "20"
 
-      - uses: actions/setup-dotnet@v4
+      - uses: actions/setup-dotnet@v6
         if: steps.detect.outputs.changed == 'true' || steps.detect.outputs.force == 'true'
         with:
           dotnet-version: "8.0.x"
