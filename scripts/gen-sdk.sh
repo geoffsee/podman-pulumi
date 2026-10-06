@@ -70,6 +70,58 @@ Path("sdk/python/README.md").write_text(
     "\nGitHub Packages has no Python registry. This SDK is generated for local use and is not published to PyPI.\n"
 )
 
+csproj = Path("sdk/dotnet/Geoffsee.Podman.csproj")
+csproj_text = csproj.read_text()
+csproj_text = csproj_text.replace(
+    "<TargetFramework>net6.0</TargetFramework>",
+    "<TargetFramework>net8.0</TargetFramework>",
+)
+# The generated tree is not committed, so SourceLink's CI mode produces no assembly.
+csproj_text = csproj_text.replace("<GeneratePackageOnBuild>true</GeneratePackageOnBuild>", "<GeneratePackageOnBuild>false</GeneratePackageOnBuild>")
+csproj_text = csproj_text.replace("<EmbedUntrackedSources>true</EmbedUntrackedSources>\n", "")
+csproj_text = csproj_text.replace("<PublishRepositoryUrl>true</PublishRepositoryUrl>\n", "")
+csproj_text = csproj_text.replace(
+    """  <PropertyGroup Condition="'$(GITHUB_ACTIONS)' == 'true'">
+    <ContinuousIntegrationBuild>true</ContinuousIntegrationBuild>
+  </PropertyGroup>
+
+""",
+    "",
+)
+csproj_text = csproj_text.replace(
+    """  <ItemGroup>
+    <PackageReference Include="Microsoft.SourceLink.GitHub" Version="1.0.0" PrivateAssets="All" />
+  </ItemGroup>
+
+""",
+    "",
+)
+# Parent .gitignore ignores sdk/, and the SDK can drop those files from the default compile set.
+csproj_text = csproj_text.replace(
+    "<Nullable>enable</Nullable>",
+    "<Nullable>enable</Nullable>\n    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>",
+)
+csproj_text = csproj_text.replace(
+    "</Project>",
+    """  <ItemGroup>
+    <Compile Include="**/*.cs" Exclude="bin/**;obj/**" />
+  </ItemGroup>
+
+</Project>
+""",
+)
+csproj.write_text(csproj_text)
+
+# C# forbids a member with the same name as its type. The CIDR field is named Subnet.
+subnet_cs = Path("sdk/dotnet/Outputs/Subnet.cs")
+subnet_cs.write_text(
+    subnet_cs.read_text()
+    .replace("public sealed class Subnet", "public sealed class NetworkSubnet")
+    .replace("private Subnet(", "private NetworkSubnet(")
+)
+network_cs = Path("sdk/dotnet/Networks/Network.cs")
+network_cs.write_text(network_cs.read_text().replace("Outputs.Subnet>", "Outputs.NetworkSubnet>"))
+
 go_mod = Path("sdk/go/podman/go.mod")
 go_mod.write_text(
     """module github.com/geoffsee/pulumi-podman/sdk/go/podman
