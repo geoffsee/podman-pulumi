@@ -70,6 +70,14 @@ Path("sdk/python/README.md").write_text(
     "\nGitHub Packages has no Python registry. This SDK is generated for local use and is not published to PyPI.\n"
 )
 
+csproj = Path("sdk/dotnet/Geoffsee.Podman.csproj")
+csproj.write_text(
+    csproj.read_text().replace(
+        "<TargetFramework>net6.0</TargetFramework>",
+        "<TargetFramework>net8.0</TargetFramework>",
+    )
+)
+
 go_mod = Path("sdk/go/podman/go.mod")
 go_mod.write_text(
     """module github.com/geoffsee/pulumi-podman/sdk/go/podman

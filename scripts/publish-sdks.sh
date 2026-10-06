@@ -66,7 +66,11 @@ EOF
 )
 
 # .NET → GitHub NuGet registry. Pack does not contact nuget.org.
-dotnet pack sdk/dotnet/Geoffsee.Podman.csproj --configuration Release --output dist/nuget
+(
+	cd sdk/dotnet
+	printf '%s\n' '{"sdk":{"version":"8.0.0","rollForward":"latestFeature"}}' > global.json
+	dotnet pack Geoffsee.Podman.csproj --configuration Release --output ../../dist/nuget
+)
 dotnet nuget remove source github >/dev/null 2>&1 || true
 dotnet nuget add source "$nuget_source" \
 	--name github \
