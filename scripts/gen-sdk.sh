@@ -112,6 +112,16 @@ csproj_text = csproj_text.replace(
 )
 csproj.write_text(csproj_text)
 
+# C# forbids a member with the same name as its type. The CIDR field is named Subnet.
+subnet_cs = Path("sdk/dotnet/Outputs/Subnet.cs")
+subnet_cs.write_text(
+    subnet_cs.read_text()
+    .replace("public sealed class Subnet", "public sealed class NetworkSubnet")
+    .replace("private Subnet(", "private NetworkSubnet(")
+)
+network_cs = Path("sdk/dotnet/Networks/Network.cs")
+network_cs.write_text(network_cs.read_text().replace("Outputs.Subnet>", "Outputs.NetworkSubnet>"))
+
 go_mod = Path("sdk/go/podman/go.mod")
 go_mod.write_text(
     """module github.com/geoffsee/pulumi-podman/sdk/go/podman
