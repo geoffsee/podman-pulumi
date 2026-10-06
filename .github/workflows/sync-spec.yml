@@ -1,0 +1,197 @@
+name: sync-spec
+
+# docs.podman.io does not send webhooks. Poll the swagger document, regenerate
+# when it changes, test, and publish a GitHub release.
+on:
+  schedule:
+    - cron: "17 */6 * * *"
+  workflow_dispatch:
+    inputs:
+      spec_url:
+        description: Upstream swagger URL
+        required: false
+        default: https://docs.podman.io/en/latest/_static/swagger.yaml
+      force:
+        description: Test and publish even if the spec is unchanged
+        type: boolean
+        default: false
+
+concurrency:
+  group: sync-spec
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+  issues: write
+  packages: write
+
+env:
+  DEFAULT_SPEC_URL: https://docs.podman.io/en/latest/_static/swagger.yaml
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          fetch-tags: true
+          token: ${{ secrets.SYNC_TOKEN || github.token }}
+
+      - name: Detect upstream swagger change
+        id: detect
+        env:
+          SPEC_URL: ${{ inputs.spec_url || env.DEFAULT_SPEC_URL }}
+          FORCE: ${{ inputs.force || false }}
+        run: |
+          set -euo pipefail
+          mkdir -p spec
+          curl -fsSL -o /tmp/upstream-swagger.yaml "$SPEC_URL"
+          sha256sum /tmp/upstream-swagger.yaml | awk '{print $1}' > /tmp/upstream.sha256
+          echo "url=$SPEC_URL" >> "$GITHUB_OUTPUT"
+          echo "sha256=$(cat /tmp/upstream.sha256)" >> "$GITHUB_OUTPUT"
+          changed=false
+          if [[ ! -f spec/swagger.yaml ]] || ! cmp -s /tmp/upstream-swagger.yaml spec/swagger.yaml; then
+            changed=true
+          fi
+          echo "changed=$changed" >> "$GITHUB_OUTPUT"
+          echo "force=$FORCE" >> "$GITHUB_OUTPUT"
+          echo "Upstream $SPEC_URL sha256=$(cat /tmp/upstream.sha256) changed=$changed force=$FORCE"
+
+      - uses: actions/setup-go@v5
+        if: steps.detect.outputs.changed == 'true' || steps.detect.outputs.force == 'true'
+        with:
+          go-version-file: go.mod
+          cache: true
+
+      - uses: pulumi/setup-pulumi@v2
+        if: steps.detect.outputs.changed == 'true' || steps.detect.outputs.force == 'true'
+
+      - name: Regenerate from upstream spec
+        if: steps.detect.outputs.changed == 'true'
+        run: |
+          set -euo pipefail
+          cp /tmp/upstream-swagger.yaml spec/swagger.yaml
+          make generate-local
+
+      - name: Test
+        id: test
+        if: steps.detect.outputs.changed == 'true' || steps.detect.outputs.force == 'true'
+        run: go test ./...
+
+      - name: Publish release
+        if: steps.detect.outputs.changed == 'true' || steps.detect.outputs.force == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.SYNC_TOKEN || github.token }}
+          SPEC_URL: ${{ steps.detect.outputs.url }}
+          SPEC_SHA256: ${{ steps.detect.outputs.sha256 }}
+        run: |
+          set -euo pipefail
+          version="$(bash scripts/bump-version.sh)"
+          echo "Publishing v${version}"
+          make schema
+          bash scripts/dist.sh
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add spec/swagger.yaml internal/specdata/openapi.adapted.yaml internal/specdata/pathmap.json VERSION schema.json
+          if git diff --cached --quiet; then
+            echo "No files to commit (force republish of current spec)"
+          else
+            git commit -m "$(cat <<EOF
+          chore(spec): sync Podman Libpod swagger for v${version}
+
+          Upstream: ${SPEC_URL}
+          sha256: ${SPEC_SHA256}
+          EOF
+          )"
+          fi
+
+          git tag "v${version}"
+          git push origin "HEAD:${GITHUB_REF_NAME}"
+          git push origin "v${version}"
+
+          notes="$(cat <<EOF
+          Regenerated from the Podman Libpod swagger and published after tests passed.
+
+          - Upstream: ${SPEC_URL}
+          - swagger sha256: \`${SPEC_SHA256}\`
+          - Provider version: \`v${version}\`
+
+          Install:
+
+          \`\`\`
+          pulumi package add podman
+          \`\`\`
+
+          The schema's \`pluginDownloadURL\` is \`github://api.github.com/${GITHUB_REPOSITORY}\`. Plugin archives:
+
+          \`pulumi-resource-podman-v${version}-<os>-<arch>.tar.gz\`
+
+          SDKs published to GitHub Packages (not npmjs.com, NuGet.org, Maven Central, or PyPI):
+
+          - npm \`@geoffsee/podman\`
+          - NuGet \`Geoffsee.Podman\`
+          - Maven \`com.geoffsee:podman\`
+
+          Python and Go are generated but not published. GitHub Packages has no registry for those formats.
+          EOF
+          )"
+          gh release create "v${version}" \
+            dist/pulumi-resource-podman-v"${version}"-*.tar.gz \
+            dist/checksums.txt \
+            --title "v${version}" \
+            --notes "$notes"
+
+      - uses: actions/setup-node@v4
+        if: steps.detect.outputs.changed == 'true' || steps.detect.outputs.force == 'true'
+        with:
+          node-version: "20"
+
+      - uses: actions/setup-dotnet@v4
+        if: steps.detect.outputs.changed == 'true' || steps.detect.outputs.force == 'true'
+        with:
+          dotnet-version: "8.0.x"
+
+      - uses: actions/setup-java@v4
+        if: steps.detect.outputs.changed == 'true' || steps.detect.outputs.force == 'true'
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - uses: gradle/actions/setup-gradle@v6
+        if: steps.detect.outputs.changed == 'true' || steps.detect.outputs.force == 'true'
+        with:
+          gradle-version: "8.10"
+
+      - name: Publish SDKs to GitHub Packages
+        if: steps.detect.outputs.changed == 'true' || steps.detect.outputs.force == 'true'
+        env:
+          # Workflow token, not SYNC_TOKEN. packages: write is on this job.
+          GITHUB_TOKEN: ${{ github.token }}
+        run: bash scripts/publish-sdks.sh
+
+      - name: Open issue if the new spec failed tests
+        if: failure() && steps.detect.outputs.changed == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.SYNC_TOKEN || github.token }}
+          SPEC_URL: ${{ steps.detect.outputs.url }}
+          SPEC_SHA256: ${{ steps.detect.outputs.sha256 }}
+        run: |
+          set -euo pipefail
+          title="sync: upstream swagger update failed"
+          body="$(cat <<EOF
+          Sync failed after regenerating from [${SPEC_URL}](${SPEC_URL}).
+
+          - swagger sha256: \`${SPEC_SHA256}\`
+          - run: ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}
+
+          If the failure is before the commit step, the spec was not committed and no release was published.
+          EOF
+          )"
+          existing="$(gh issue list --state open --search "in:title ${title}" --json number --jq '.[0].number // empty')"
+          if [[ -n "$existing" ]]; then
+            gh issue comment "$existing" --body "$body"
+          else
+            gh issue create --title "$title" --body "$body"
+          fi

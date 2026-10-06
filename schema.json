@@ -1,0 +1,4554 @@
+{
+  "name": "podman",
+  "displayName": "Podman",
+  "version": "0.1.0",
+  "description": "The Pulumi Podman provider manages containers, pods, images, volumes, networks, secrets, and artifacts through the Libpod REST API.",
+  "keywords": [
+    "pulumi",
+    "podman",
+    "containers",
+    "category/infrastructure",
+    "kind/native"
+  ],
+  "homepage": "https://github.com/geoffsee/pulumi-podman",
+  "license": "Apache-2.0",
+  "repository": "https://github.com/geoffsee/pulumi-podman",
+  "logoUrl": "https://raw.githubusercontent.com/geoffsee/pulumi-podman/main/docs/logo.svg",
+  "pluginDownloadURL": "github://api.github.com/geoffsee/pulumi-podman",
+  "publisher": "geoffsee",
+  "namespace": "geoffsee",
+  "language": {
+    "csharp": {
+      "respectSchemaVersion": true,
+      "rootNamespace": "Geoffsee"
+    },
+    "go": {
+      "generateResourceContainerTypes": true,
+      "importBasePath": "github.com/geoffsee/pulumi-podman/sdk/go/podman",
+      "respectSchemaVersion": true
+    },
+    "java": {
+      "basePackage": "com.geoffsee"
+    },
+    "nodejs": {
+      "packageName": "@geoffsee/podman",
+      "respectSchemaVersion": true
+    },
+    "python": {
+      "packageName": "pulumi_podman",
+      "pyproject": {
+        "enabled": true
+      },
+      "respectSchemaVersion": true
+    }
+  },
+  "config": {
+    "variables": {
+      "apiKey": {
+        "type": "string",
+        "description": "API key value.",
+        "secret": true
+      },
+      "apiKeyHeader": {
+        "type": "string",
+        "description": "HTTP header name for the API key (default: api_key)."
+      },
+      "baseUrl": {
+        "type": "string",
+        "description": "Base URL for the API (overrides the spec server URL)."
+      },
+      "bearerToken": {
+        "type": "string",
+        "description": "Bearer token for the Authorization header.",
+        "secret": true
+      }
+    }
+  },
+  "types": {
+    "podman:index:Address": {
+      "properties": {
+        "addr": {
+          "type": "string"
+        },
+        "prefixLength": {
+          "type": "integer"
+        }
+      },
+      "type": "object"
+    },
+    "podman:index:ArtifactVolume": {
+      "description": "ArtifactVolume is a volume based on a artifact. The artifact blobs will\nbe bind mounted directly as files and must always be read only.",
+      "properties": {
+        "destination": {
+          "type": "string",
+          "description": "Destination is the absolute path of the mount in the container.\nIf path is a file in the container, then the artifact must consist of a single blob.\nOtherwise if it is a directory or does not exists all artifact blobs will be mounted\ninto this path as files. As name the \"org.opencontainers.image.title\" will be used if\navailable otherwise the digest is used as name."
+        },
+        "digest": {
+          "type": "string",
+          "description": "Digest can be used to filter a single blob from a multi blob artifact by the given digest.\nWhen this option is set the file name in the container defaults to the digest even when\nthe title annotation exist.\nOptional. Conflicts with Title."
+        },
+        "name": {
+          "type": "string",
+          "description": "Name is the name that should be used for the path inside the container. When a single blob\nis mounted the name is used as is. If multiple blobs are mounted then mount them as\n\"\u003cname\u003e-x\" where x is a 0 indexed integer based on the layer order.\nOptional."
+        },
+        "source": {
+          "type": "string",
+          "description": "Source is the name or digest of the artifact that should be mounted"
+        },
+        "title": {
+          "type": "string",
+          "description": "Title can be used for multi blob artifacts to only mount the one specific blob that\nmatches the \"org.opencontainers.image.title\" annotation.\nOptional. Conflicts with Digest."
+        }
+      },
+      "type": "object"
+    },
+    "podman:index:AutoUserNsOptions": {
+      "properties": {
+        "additionalGIDMappings": {
+          "type": "array",
+          "items": {
+            "$ref": "#/types/podman:index:IDMap"
+          },
+          "description": "AdditionalGIDMappings specified additional GID mappings to include in\nthe generated user namespace."
+        },
+        "additionalUIDMappings": {
+          "type": "array",
+          "items": {
+            "$ref": "#/types/podman:index:IDMap"
+          },
+          "description": "AdditionalUIDMappings specified additional UID mappings to include in\nthe generated user namespace."
+        },
+        "groupFile": {
+          "type": "string",
+          "description": "GroupFile to use if the container uses a volume."
+        },
+        "initialSize": {
+          "type": "integer",
+          "description": "InitialSize defines the minimum size for the user namespace.\nThe created user namespace will have at least this size."
+        },
+        "passwdFile": {
+          "type": "string",
+          "description": "PasswdFile to use if the container uses a volume."
+        },
+        "size": {
+          "type": "integer",
+          "description": "Size defines the size for the user namespace.  If it is set to a\nvalue bigger than 0, the user namespace will have exactly this size.\nIf it is not set, some heuristics will be used to find its size."
+        }
+      },
+      "type": "object"
+    },
+    "podman:index:Descriptor": {
+      "description": "This structure provides `application/vnd.oci.descriptor.v1+json` mediatype\nwhen marshalled to JSON.",
+      "properties": {
+        "annotations": {
+          "type": "object",
+          "description": "Annotations contains arbitrary metadata relating to the targeted content."
+        },
+        "artifactType": {
+          "type": "string",
+          "description": "ArtifactType is the IANA media type of this artifact."
+        },
+        "data": {
+          "type": "array",
+          "items": {
+            "type": "integer"
+          },
+          "description": "Data is an embedding of the targeted content. This is encoded as a base64\nstring when marshalled to JSON (automatically, by encoding/json). If\npresent, Data can be used directly to avoid fetching the targeted content."
+        },
+        "digest": {
+          "$ref": "#/types/podman:index:Digest"
+        },
+        "mediaType": {
+          "type": "string",
+          "description": "MediaType is the media type of the object this schema refers to."
+        },
+        "platform": {
+          "$ref": "#/types/podman:index:Platform"
+        },
+        "size": {
+          "type": "integer",
+          "description": "Size specifies the size in bytes of the blob."
+        },
+        "urls": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "URLs specifies a list of URLs from which this object MAY be downloaded"
+        }
+      },
+      "type": "object"
+    },
+    "podman:index:Digest": {
+      "description": "The following is an example of the contents of Digest types:\n\nsha256:7173b809ca12ec5dee4506cd86be934c4596dd234ee82c0662eac04a8c2c71dc\n\nThis allows to abstract the digest behind this type and work only in those\nterms.",
+      "type": "object"
+    },
+    "podman:index:Duration": {
+      "description": "A Duration represents the elapsed time between two instants\nas an int64 nanosecond count. The representation limits the\nlargest representable duration to approximately 290 years.",
+      "type": "object"
+    },
+    "podman:index:FileMode": {
+      "description": "The bits have the same definition on all systems, so that\ninformation about files can be moved from one system\nto another portably. Not all bits apply to all systems.\nThe only required bit is [ModeDir] for directories.",
+      "type": "object"
+    },
+    "podman:index:HealthCheckLog": {
+      "description": "HealthCheckLog describes the results of a single healthcheck",
+      "properties": {
+        "end": {
+          "type": "string",
+          "description": "End time as a string"
+        },
+        "exitCode": {
+          "type": "integer",
+          "description": "Exitcode is 0 or 1"
+        },
+        "output": {
+          "type": "string",
+          "description": "Output is the stdout/stderr from the healthcheck command"
+        },
+        "start": {
+          "type": "string",
+          "description": "Start time as string"
+        }
+      },
+      "type": "object"
+    },
+    "podman:index:HealthCheckOnFailureAction": {
+      "description": "HealthCheckOnFailureAction defines how Podman reacts when a container's health\nstatus turns unhealthy.",
+      "type": "object"
+    },
+    "podman:index:HealthCheckResults": {
+      "description": "HealthCheckResults describes the results/logs from a healthcheck",
+      "properties": {
+        "failingStreak": {
+          "type": "integer",
+          "description": "FailingStreak is the number of consecutive failed healthchecks"
+        },
+        "log": {
+          "type": "array",
+          "items": {
+            "$ref": "#/types/podman:index:HealthCheckLog"
+          },
+          "description": "Log describes healthcheck attempts and results"
+        },
+        "status": {
+          "type": "string",
+          "description": "Status starting, healthy or unhealthy"
+        }
+      },
+      "type": "object"
+    },
+    "podman:index:History": {
+      "properties": {
+        "author": {
+          "type": "string",
+          "description": "Author is the author of the build point."
+        },
+        "comment": {
+          "type": "string",
+          "description": "Comment is a custom message set when creating the layer."
+        },
+        "created": {
+          "type": "string",
+          "description": "Created is the combined date and time at which the layer was created, formatted as defined by RFC 3339, section 5.6."
+        },
+        "createdBy": {
+          "type": "string",
+          "description": "CreatedBy is the command which created the layer."
+        },
+        "emptyLayer": {
+          "type": "boolean",
+          "description": "EmptyLayer is used to mark if the history item created a filesystem diff."
+        }
+      },
+      "type": "object"
+    },
+    "podman:index:IDMap": {
+      "description": "IDMap contains a single entry for user namespace range remapping. An array\nof IDMap entries represents the structure that will be provided to the Linux\nkernel for creating a user namespace.",
+      "properties": {
+        "containerId": {
+          "type": "integer"
+        },
+        "hostId": {
+          "type": "integer"
+        },
+        "size": {
+          "type": "integer"
+        }
+      },
+      "type": "object"
+    },
+    "podman:index:IDMappingOptions": {
+      "description": "These options express what the caller wants, the mapping that the\ncontainer's user namespace should use.  They do not describe what is\nstored on disk.  Depending on the graph driver, the store may apply\nthe mapping at layer creation time (by chowning files) or defer it to\nmount time (using idmapped mounts or fuse-overlayfs options), but\nthat distinction is transparent to the caller.\n\nThe resolution order for the effective UID/GID maps is:\n1. If HostUIDMapping/HostGIDMapping is true, no mapping is used (the\ncorresponding UIDMap/GIDMap is ignored and treated as empty).\n2. If UIDMap/GIDMap contain at least one entry, those mappings are used.\n3. Otherwise, if the layer has a parent, the parent's mappings are inherited.\n4. Otherwise, the Store-level default mappings are used.",
+      "properties": {
+        "autoUserNs": {
+          "type": "boolean"
+        },
+        "autoUserNsOpts": {
+          "$ref": "#/types/podman:index:AutoUserNsOptions"
+        },
+        "gIDMap": {
+          "type": "array",
+          "items": {
+            "$ref": "#/types/podman:index:IDMap"
+          },
+          "description": "GIDMap defines the GID mappings for the user namespace.\nOnly used when HostGIDMapping is false."
+        },
+        "hostGIDMapping": {
+          "type": "boolean",
+          "description": "HostGIDMapping indicates that no GID mapping should be applied.\nWhen true, GIDMap is ignored and files are accessed with host GIDs."
+        },
+        "hostUIDMapping": {
+          "type": "boolean",
+          "description": "HostUIDMapping indicates that no UID mapping should be applied.\nWhen true, UIDMap is ignored and files are accessed with host UIDs."
+        },
+        "uIDMap": {
+          "type": "array",
+          "items": {
+            "$ref": "#/types/podman:index:IDMap"
+          },
+          "description": "UIDMap defines the UID mappings for the user namespace.\nOnly used when HostUIDMapping is false."
+        }
+      },
+      "type": "object"
+    },
+    "podman:index:ImageConfig": {
+      "properties": {
+        "argsEscaped": {
+          "type": "boolean",
+          "description": "ArgsEscaped\n\nDeprecated: This field is present only for legacy compatibility with\nDocker and should not be used by new image builders.  It is used by Docker\nfor Windows images to indicate that the `Entrypoint` or `Cmd` or both,\ncontains only a single element array, that is a pre-escaped, and combined\ninto a single string `CommandLine`. If `true` the value in `Entrypoint` or\n`Cmd` should be used as-is to avoid double escaping.\nhttps://github.com/opencontainers/image-spec/pull/892"
+        },
+        "cmd": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Cmd defines the default arguments to the entrypoint of the container."
+        },
+        "entrypoint": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Entrypoint defines a list of arguments to use as the command to execute when the container starts."
+        },
+        "env": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Env is a list of environment variables to be used in a container."
+        },
+        "exposedPorts": {
+          "type": "object",
+          "description": "ExposedPorts a set of ports to expose from a container running this image."
+        },
+        "labels": {
+          "type": "object",
+          "description": "Labels contains arbitrary metadata for the container."
+        },
+        "stopSignal": {
+          "type": "string",
+          "description": "StopSignal contains the system call signal that will be sent to the container to exit."
+        },
+        "user": {
+          "type": "string",
+          "description": "User defines the username or UID which the process in the container should run as."
+        },
+        "volumes": {
+          "type": "object",
+          "description": "Volumes is a set of directories describing where the process is likely write data specific to a container instance."
+        },
+        "workingDir": {
+          "type": "string",
+          "description": "WorkingDir sets the current working directory of the entrypoint process in the container."
+        }
+      },
+      "type": "object"
+    },
+    "podman:index:ImageVolume": {
+      "description": "ImageVolume is a volume based on a container image.  The container image is\nfirst mounted on the host and is then bind-mounted into the container.  An\nImageVolume is always mounted read-only.",
+      "properties": {
+        "destination": {
+          "type": "string",
+          "description": "Destination is the absolute path of the mount in the container."
+        },
+        "readWrite": {
+          "type": "boolean",
+          "description": "ReadWrite sets the volume writable."
+        },
+        "source": {
+          "type": "string",
+          "description": "Source is the source of the image volume.  The image can be referred\nto by name and by ID."
+        },
+        "subPath": {
+          "type": "string",
+          "description": "SubPath mounts a particular path within the image.\nIf empty, the whole image is mounted."
+        }
+      },
+      "type": "object"
+    },
+    "podman:index:InspectBlkioThrottleDevice": {
+      "description": "InspectBlkioThrottleDevice holds information about a speed cap for a device\nnode. This cap applies to a specific operation (read, write, etc) on the given\nnode.",
+      "properties": {
+        "path": {
+          "type": "string",
+          "description": "Path is the path to the device this applies to."
+        },
+        "rate": {
+          "type": "integer",
+          "description": "Rate is the maximum rate. It is in either bytes per second or iops\nper second, determined by where it is used - documentation will\nindicate which is appropriate."
+        }
+      },
+      "type": "object"
+    },
+    "podman:index:InspectBlkioWeightDevice": {
+      "description": "InspectBlkioWeightDevice holds information about the relative weight\nof an individual device node. Weights are used in the I/O scheduler to give\nrelative priority to some accesses.",
+      "properties": {
+        "path": {
+          "type": "string",
+          "description": "Path is the path to the device this applies to."
+        },
+        "weight": {
+          "type": "integer",
+          "description": "Weight is the relative weight the scheduler will use when scheduling\nI/O."
+        }
+      },
+      "type": "object"
+    },
+    "podman:index:InspectContainerConfig": {
+      "description": "InspectContainerConfig holds further data about how a container was initially\nconfigured.",
+      "properties": {
+        "annotations": {
+          "type": "object",
+          "description": "Container annotations"
+        },
+        "attachStderr": {
+          "type": "boolean",
+          "description": "Unused, at present"
+        },
+        "attachStdin": {
+          "type": "boolean",
+          "description": "Unused, at present"
+        },
+        "attachStdout": {
+          "type": "boolean",
+          "description": "Unused, at present"
+        },
+        "chrootDirs": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "ChrootDirs is an additional set of directories that need to be\ntreated as root directories. Standard bind mounts will be mounted\ninto paths relative to these directories."
+        },
+        "cmd": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Container command"
+        },
+        "createCommand": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "CreateCommand is the full command plus arguments of the process the\ncontainer has been created with."
+        },
+        "domainname": {
+          "type": "string",
+          "description": "Container domain name - unused at present"
+        },
+        "entrypoint": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Container entrypoint"
+        },
+        "env": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Container environment variables"
+        },
+        "exposedPorts": {
+          "type": "object",
+          "description": "ExposedPorts includes ports the container has exposed."
+        },
+        "healthLogDestination": {
+          "type": "string",
+          "description": "HealthLogDestination defines the destination where the log is stored"
+        },
+        "healthcheck": {
+          "$ref": "#/types/podman:index:Schema2HealthConfig"
+        },
+        "healthcheckMaxLogCount": {
+          "type": "integer",
+          "description": "HealthMaxLogCount is maximum number of attempts in the HealthCheck log file.\n('0' value means an infinite number of attempts in the log file)"
+        },
+        "healthcheckMaxLogSize": {
+          "type": "integer",
+          "description": "HealthMaxLogSize is the maximum length in characters of stored HealthCheck log\n(\"0\" value means an infinite log length)"
+        },
+        "healthcheckOnFailureAction": {
+          "type": "string",
+          "description": "HealthcheckOnFailureAction defines an action to take once the container turns unhealthy."
+        },
+        "hostname": {
+          "type": "string",
+          "description": "Container hostname"
+        },
+        "image": {
+          "type": "string",
+          "description": "Container image"
+        },
+        "labels": {
+          "type": "object",
+          "description": "Container labels"
+        },
+        "onBuild": {
+          "type": "string",
+          "description": "On-build arguments - presently unused. More of Buildah's domain."
+        },
+        "openStdin": {
+          "type": "boolean",
+          "description": "Whether the container leaves STDIN open"
+        },
+        "passwd": {
+          "type": "boolean",
+          "description": "Passwd determines whether or not podman can add entries to /etc/passwd and /etc/group"
+        },
+        "sdNotifyMode": {
+          "type": "string",
+          "description": "SdNotifyMode is the sd-notify mode of the container."
+        },
+        "sdNotifySocket": {
+          "type": "string",
+          "description": "SdNotifySocket is the NOTIFY_SOCKET in use by/configured for the container."
+        },
+        "secrets": {
+          "type": "array",
+          "items": {
+            "$ref": "#/types/podman:index:InspectSecret"
+          },
+          "description": "Secrets are the secrets mounted in the container"
+        },
+        "startupHealthCheck": {
+          "$ref": "#/types/podman:index:StartupHealthCheck"
+        },
+        "stdinOnce": {
+          "type": "boolean",
+          "description": "Whether STDIN is only left open once.\nPresently not supported by Podman, unused."
+        },
+        "stopSignal": {
+          "type": "string",
+          "description": "Container stop signal"
+        },
+        "stopTimeout": {
+          "type": "integer",
+          "description": "StopTimeout is time before container is stopped when calling stop"
+        },
+        "systemdMode": {
+          "type": "boolean",
+          "description": "SystemdMode is whether the container is running in systemd mode. In\nsystemd mode, the container configuration is customized to optimize\nrunning systemd in the container."
+        },
+        "timeout": {
+          "type": "integer",
+          "description": "Timeout is time before container is killed by conmon"
+        },
+        "timezone": {
+          "type": "string",
+          "description": "Timezone is the timezone inside the container.\nLocal means it has the same timezone as the host machine"
+        },
+        "tty": {
+          "type": "boolean",
+          "description": "Whether the container creates a TTY"
+        },
+        "umask": {
+          "type": "string",
+          "description": "Umask is the umask inside the container."
+        },
+        "user": {
+          "type": "string",
+          "description": "User the container was launched with"
+        },
+        "volumes": {
+          "type": "object",
+          "description": "Unused, at present. I've never seen this field populated."
+        },
+        "workingDir": {
+          "type": "string",
+          "description": "Container working directory"
+        }
+      },
+      "type": "object"
+    },
+    "podman:index:InspectContainerHostConfig": {
+      "description": "InspectContainerHostConfig holds information used when the container was\ncreated.\nIt's very much a Docker-specific struct, retained (mostly) as-is for\ncompatibility. We fill individual fields as best as we can, inferring as much\nas possible from the spec and container config.\nSome things cannot be inferred. These will be populated by spec annotations\n(if available).",
+      "properties": {
+        "annotations": {
+          "type": "object",
+          "description": "Annotations are provided to the runtime when the container is\nstarted."
+        },
+        "autoRemove": {
+          "type": "boolean",
+          "description": "AutoRemove is whether the container will be automatically removed on\nexiting.\nIt is not handled directly within libpod and is stored in an\nannotation."
+        },
+        "autoRemoveImage": {
+          "type": "boolean",
+          "description": "AutoRemoveImage is whether the container's image will be\nautomatically removed on exiting.\nIt is not handled directly within libpod and is stored in an\nannotation."
+        },
+        "binds": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Binds contains an array of user-added mounts.\nBoth volume mounts and named volumes are included.\nTmpfs mounts are NOT included.\nIn 'docker inspect' this is separated into 'Binds' and 'Mounts' based\non how a mount was added. We do not make this distinction and do not\ninclude a Mounts field in inspect.\nFormat: \u003csrc\u003e:\u003cdestination\u003e[:\u003ccomma-separated options\u003e]"
+        },
+        "blkioDeviceReadBps": {
+          "type": "array",
+          "items": {
+            "$ref": "#/types/podman:index:InspectBlkioThrottleDevice"
+          },
+          "description": "BlkioDeviceReadBps is an array of I/O throttle parameters for\nindividual device nodes.\nThis specifically sets read rate cap in bytes per second for device\nnodes.\nAs with BlkioWeightDevice, we pull the path from /sys/dev, and we\ndon't guarantee the path will be identical to the original (though\nthe node will be)."
+        },
+        "blkioDeviceReadIOps": {
+          "type": "array",
+          "items": {
+            "$ref": "#/types/podman:index:InspectBlkioThrottleDevice"
+          },
+          "description": "BlkioDeviceReadIOps is an array of I/O throttle parameters for\nindividual device nodes.\nThis specifically sets the read rate cap in iops per second for\ndevice nodes.\nAs with BlkioWeightDevice, we pull the path from /sys/dev, and we\ndon't guarantee the path will be identical to the original (though\nthe node will be)."
+        },
+        "blkioDeviceWriteBps": {
+          "type": "array",
+          "items": {
+            "$ref": "#/types/podman:index:InspectBlkioThrottleDevice"
+          },
+          "description": "BlkioDeviceWriteBps is an array of I/O throttle parameters for\nindividual device nodes.\nthis specifically sets write rate cap in bytes per second for device\nnodes.\nas with BlkioWeightDevice, we pull the path from /sys/dev, and we\ndon't guarantee the path will be identical to the original (though\nthe node will be)."
+        },
+        "blkioDeviceWriteIOps": {
+          "type": "array",
+          "items": {
+            "$ref": "#/types/podman:index:InspectBlkioThrottleDevice"
+          },
+          "description": "BlkioDeviceWriteIOps is an array of I/O throttle parameters for\nindividual device nodes.\nThis specifically sets the write rate cap in iops per second for\ndevice nodes.\nAs with BlkioWeightDevice, we pull the path from /sys/dev, and we\ndon't guarantee the path will be identical to the original (though\nthe node will be)."
+        },
+        "blkioWeight": {
+          "type": "integer",
+          "description": "BlkioWeight indicates the I/O resources allocated to the container.\nIt is a relative weight in the scheduler for assigning I/O time\nversus other Cgroups."
+        },
+        "blkioWeightDevice": {
+          "type": "array",
+          "items": {
+            "$ref": "#/types/podman:index:InspectBlkioWeightDevice"
+          },
+          "description": "BlkioWeightDevice is an array of I/O resource priorities for\nindividual device nodes.\nUnfortunately, the spec only stores the device's Major/Minor numbers\nand not the path, which is used here.\nFortunately, the kernel provides an interface for retrieving the path\nof a given node by major:minor at /sys/dev/. However, the exact path\nin use may not be what was used in the original CLI invocation -\nthough it is guaranteed that the device node will be the same, and\nusing the given path will be functionally identical."
+        },
+        "capAdd": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "CapAdd is a list of capabilities added to the container.\nIt is not directly stored by Libpod, and instead computed from the\ncapabilities listed in the container's spec, compared against a set\nof default capabilities."
+        },
+        "capDrop": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "CapDrop is a list of capabilities removed from the container.\nIt is not directly stored by libpod, and instead computed from the\ncapabilities listed in the container's spec, compared against a set\nof default capabilities."
+        },
+        "cgroup": {
+          "type": "string",
+          "description": "Cgroup contains the container's cgroup. It is presently not\npopulated.\nTODO."
+        },
+        "cgroupConf": {
+          "type": "object",
+          "description": "CgroupConf is the configuration for cgroup v2."
+        },
+        "cgroupManager": {
+          "type": "string",
+          "description": "CgroupManager is the cgroup manager used by the container.\nAt present, allowed values are either \"cgroupfs\" or \"systemd\"."
+        },
+        "cgroupMode": {
+          "type": "string",
+          "description": "CgroupMode is the configuration of the container's cgroup namespace.\nPopulated as follows:\nprivate - a cgroup namespace has been created\nhost - No cgroup namespace created\ncontainer:\u003cid\u003e - Using another container's cgroup namespace\nns:\u003cpath\u003e - A path to a cgroup namespace has been specified"
+        },
+        "cgroupParent": {
+          "type": "string",
+          "description": "CgroupParent is the Cgroup parent of the container.\nOnly set if not default."
+        },
+        "cgroups": {
+          "type": "string",
+          "description": "Cgroups contains the container's Cgroup mode.\nAllowed values are \"default\" (container is creating Cgroups) and\n\"disabled\" (container is not creating Cgroups).\nThis is Libpod-specific and not included in `docker inspect`."
+        },
+        "consoleSize": {
+          "type": "array",
+          "items": {
+            "type": "integer"
+          },
+          "description": "ConsoleSize is an array of 2 integers showing the size of the\ncontainer's console.\nIt is only set if the container is creating a terminal."
+        },
+        "containerIDFile": {
+          "type": "string",
+          "description": "ContainerIDFile is a file created during container creation to hold\nthe ID of the created container.\nThis is not handled within libpod and is stored in an annotation."
+        },
+        "cpuCount": {
+          "type": "integer",
+          "description": "CpuCount is Windows-only and not presently implemented."
+        },
+        "cpuPercent": {
+          "type": "integer",
+          "description": "CpuPercent is Windows-only and not presently implemented."
+        },
+        "cpuPeriod": {
+          "type": "integer",
+          "description": "CpuPeriod is the length of a CPU period in microseconds.\nIt relates directly to CpuQuota."
+        },
+        "cpuQuota": {
+          "type": "integer",
+          "description": "CpuPeriod is the amount of time (in microseconds) that a container\ncan use the CPU in every CpuPeriod."
+        },
+        "cpuRealtimePeriod": {
+          "type": "integer",
+          "description": "CpuRealtimePeriod is the length of time (in microseconds) of the CPU\nrealtime period. If set to 0, no time will be allocated to realtime\ntasks."
+        },
+        "cpuRealtimeRuntime": {
+          "type": "integer",
+          "description": "CpuRealtimeRuntime is the length of time (in microseconds) allocated\nfor realtime tasks within every CpuRealtimePeriod."
+        },
+        "cpuShares": {
+          "type": "integer",
+          "description": "CpuShares indicates the CPU resources allocated to the container.\nIt is a relative weight in the scheduler for assigning CPU time\nversus other Cgroups."
+        },
+        "cpusetCpus": {
+          "type": "string",
+          "description": "CpusetCpus is the set of CPUs that the container will execute on.\nFormatted as `0-3` or `0,2`. Default (if unset) is all CPUs."
+        },
+        "cpusetMems": {
+          "type": "string",
+          "description": "CpusetMems is the set of memory nodes the container will use.\nFormatted as `0-3` or `0,2`. Default (if unset) is all memory nodes."
+        },
+        "devices": {
+          "type": "array",
+          "items": {
+            "$ref": "#/types/podman:index:InspectDevice"
+          },
+          "description": "Devices is a list of device nodes that will be added to the\ncontainer.\nThese are stored in the OCI spec only as type, major, minor while we\ndisplay the host path. We convert this with /sys/dev, but we cannot\nguarantee that the host path will be identical - only that the actual\ndevice will be."
+        },
+        "diskQuota": {
+          "type": "integer",
+          "description": "DiskQuota is the maximum amount of disk space the container may use\n(in bytes).\nPresently not populated.\nTODO."
+        },
+        "dns": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Dns is a list of DNS nameservers that will be added to the\ncontainer's resolv.conf"
+        },
+        "dnsOptions": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "DnsOptions is a list of DNS options that will be set in the\ncontainer's resolv.conf"
+        },
+        "dnsSearch": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "DnsSearch is a list of DNS search domains that will be set in the\ncontainer's resolv.conf"
+        },
+        "extraHosts": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "ExtraHosts contains hosts that will be added to the container's\netc/hosts."
+        },
+        "groupAdd": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "GroupAdd contains groups that the user inside the container will be\nadded to."
+        },
+        "hostsFile": {
+          "type": "string",
+          "description": "HostsFile is the base file to create the `/etc/hosts` file inside the container."
+        },
+        "iDMappings": {
+          "$ref": "#/types/podman:index:InspectIDMappings"
+        },
+        "iOMaximumBandwidth": {
+          "type": "integer",
+          "description": "IOMaximumBandwidth is Windows-only and not presently implemented."
+        },
+        "iOMaximumIOps": {
+          "type": "integer",
+          "description": "IOMaximumIOps is Windows-only and not presently implemented."
+        },
+        "init": {
+          "type": "boolean",
+          "description": "Init indicates whether the container has an init mounted into it."
+        },
+        "intelRdtClosID": {
+          "type": "string",
+          "description": "IntelRdtClosID defines the Intel RDT CAT Class Of Service (COS) that\nall processes of the container should run in."
+        },
+        "ipcMode": {
+          "type": "string",
+          "description": "IpcMode represents the configuration of the container's IPC\nnamespace.\nPopulated as follows:\n\"\" (empty string) - Default, an IPC namespace will be created\nhost - No IPC namespace created\ncontainer:\u003cid\u003e - Using another container's IPC namespace\nns:\u003cpath\u003e - A path to an IPC namespace has been specified"
+        },
+        "isolation": {
+          "type": "string",
+          "description": "Isolation is presently unused and provided solely for Docker\ncompatibility."
+        },
+        "kernelMemory": {
+          "type": "integer",
+          "description": "KernelMemory is the maximum amount of memory the kernel will devote\nto the container."
+        },
+        "links": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Links is unused, and provided purely for Docker compatibility."
+        },
+        "logConfig": {
+          "$ref": "#/types/podman:index:InspectLogConfig"
+        },
+        "memory": {
+          "type": "integer",
+          "description": "Memory indicates the memory resources allocated to the container.\nThis is the limit (in bytes) of RAM the container may use."
+        },
+        "memoryReservation": {
+          "type": "integer",
+          "description": "MemoryReservation is the reservation (soft limit) of memory available\nto the container. Soft limits are warnings only and can be exceeded."
+        },
+        "memorySwap": {
+          "type": "integer",
+          "description": "MemorySwap is the total limit for all memory available to the\ncontainer, including swap. 0 indicates that there is no limit to the\namount of memory available."
+        },
+        "memorySwappiness": {
+          "type": "integer",
+          "description": "MemorySwappiness is the willingness of the kernel to page container\nmemory to swap. It is an integer from 0 to 100, with low numbers\nbeing more likely to be put into swap.\nnil means swappiness is unset and the system default is used."
+        },
+        "nanoCpus": {
+          "type": "integer",
+          "description": "NanoCpus indicates number of CPUs allocated to the container.\nIt is an integer where one full CPU is indicated by 1000000000 (one\nbillion).\nThus, 2.5 CPUs (fractional portions of CPUs are allowed) would be\n2500000000 (2.5 billion).\nIn 'docker inspect' this is set exclusively of two further options in\nthe output (CpuPeriod and CpuQuota) which are both used to implement\nthis functionality.\nWe can't distinguish here, so if CpuQuota is set to the default of\n100000, we will set both CpuQuota, CpuPeriod, and NanoCpus. If\nCpuQuota is not the default, we will not set NanoCpus."
+        },
+        "networkMode": {
+          "type": "string",
+          "description": "NetworkMode is the configuration of the container's network\nnamespace.\nPopulated as follows:\ndefault - A network namespace is being created and configured\nnone - A network namespace is being created, not configured\nhost - No network namespace created\ncontainer:\u003cid\u003e - Using another container's network namespace\nns:\u003cpath\u003e - A path to a network namespace has been specified"
+        },
+        "oomKillDisable": {
+          "type": "boolean",
+          "description": "OomKillDisable indicates whether the kernel OOM killer is disabled\nfor the container."
+        },
+        "oomScoreAdj": {
+          "type": "integer",
+          "description": "OOMScoreAdj is an adjustment that will be made to the container's OOM\nscore."
+        },
+        "pidMode": {
+          "type": "string",
+          "description": "PidMode represents the configuration of the container's PID\nnamespace.\nPopulated as follows:\n\"\" (empty string) - Default, a PID namespace will be created\nhost - No PID namespace created\ncontainer:\u003cid\u003e - Using another container's PID namespace\nns:\u003cpath\u003e - A path to a PID namespace has been specified"
+        },
+        "pidsLimit": {
+          "type": "integer",
+          "description": "PidsLimit is the maximum number of PIDs that may be created within\nthe container. 0, the default, indicates no limit."
+        },
+        "portBindings": {
+          "type": "object",
+          "description": "PortBindings contains the container's port bindings.\nIt is formatted as map[string][]InspectHostPort.\nThe string key here is formatted as \u003cinteger port number\u003e/\u003cprotocol\u003e\nand represents the container port. A single container port may be\nbound to multiple host ports (on different IPs)."
+        },
+        "privileged": {
+          "type": "boolean",
+          "description": "Privileged indicates whether the container is running with elevated\nprivileges.\nThis has a very specific meaning in the Docker sense, so it's very\ndifficult to decode from the spec and config, and so is stored as an\nannotation."
+        },
+        "publishAllPorts": {
+          "type": "boolean",
+          "description": "PublishAllPorts indicates whether image ports are being published.\nThis is not directly stored in libpod and is saved as an annotation."
+        },
+        "readonlyRootfs": {
+          "type": "boolean",
+          "description": "ReadonlyRootfs is whether the container will be mounted read-only."
+        },
+        "restartPolicy": {
+          "$ref": "#/types/podman:index:InspectRestartPolicy"
+        },
+        "runtime": {
+          "type": "string",
+          "description": "Runtime is provided purely for Docker compatibility.\nIt is set unconditionally to \"oci\" as Podman does not presently\nsupport non-OCI runtimes."
+        },
+        "securityOpt": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "SecurityOpt is a list of security-related options that are set in the\ncontainer."
+        },
+        "shmSize": {
+          "type": "integer"
+        },
+        "tmpfs": {
+          "type": "object",
+          "description": "Tmpfs is a list of tmpfs filesystems that will be mounted into the\ncontainer.\nIt is a map of destination path to options for the mount."
+        },
+        "uTSMode": {
+          "type": "string",
+          "description": "UTSMode represents the configuration of the container's UID\nnamespace.\nPopulated as follows:\n\"\" (empty string) - Default, a UTS namespace will be created\nhost - no UTS namespace created\ncontainer:\u003cid\u003e - Using another container's UTS namespace\nns:\u003cpath\u003e - A path to a UTS namespace has been specified"
+        },
+        "ulimits": {
+          "type": "array",
+          "items": {
+            "$ref": "#/types/podman:index:InspectUlimit"
+          },
+          "description": "Ulimits is a set of ulimits that will be set within the container."
+        },
+        "usernsMode": {
+          "type": "string",
+          "description": "UsernsMode represents the configuration of the container's user\nnamespace.\nWhen running rootless, a user namespace is created outside of libpod\nto allow some privileged operations. This will not be reflected here.\nPopulated as follows:\n\"\" (empty string) - No user namespace will be created\nprivate - The container will be run in a user namespace\ncontainer:\u003cid\u003e - Using another container's user namespace\nns:\u003cpath\u003e - A path to a user namespace has been specified\nTODO Rootless has an additional 'keep-id' option, presently not\nreflected here."
+        },
+        "volumeDriver": {
+          "type": "string",
+          "description": "VolumeDriver is presently unused and is retained for Docker\ncompatibility."
+        },
+        "volumesFrom": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "VolumesFrom is a list of containers which this container uses volumes\nfrom. This is not handled directly within libpod and is stored in an\nannotation.\nIt is formatted as an array of container names and IDs."
+        }
+      },
+      "type": "object"
+    },
+    "podman:index:InspectContainerState": {
+      "description": "InspectContainerState provides a detailed record of a container's current\nstate. It is returned as part of InspectContainerData.\nAs with InspectContainerData, many portions of this struct are matched to\nDocker, but here we see more fields that are unused (nonsensical in the\ncontext of Libpod).",
+      "properties": {
+        "cgroupPath": {
+          "type": "string"
+        },
+        "checkpointLog": {
+          "type": "string"
+        },
+        "checkpointPath": {
+          "type": "string"
+        },
+        "checkpointed": {
+          "type": "boolean"
+        },
+        "checkpointedAt": {
+          "type": "string"
+        },
+        "conmonPid": {
+          "type": "integer"
+        },
+        "dead": {
+          "type": "boolean"
+        },
+        "error": {
+          "type": "string"
+        },
+        "exitCode": {
+          "type": "integer"
+        },
+        "finishedAt": {
+          "type": "string"
+        },
+        "health": {
+          "$ref": "#/types/podman:index:HealthCheckResults"
+        },
+        "oOMKilled": {
+          "type": "boolean"
+        },
+        "ociVersion": {
+          "type": "string"
+        },
+        "paused": {
+          "type": "boolean"
+        },
+        "pid": {
+          "type": "integer"
+        },
+        "restarting": {
+          "type": "boolean"
+        },
+        "restoreLog": {
+          "type": "string"
+        },
+        "restored": {
+          "type": "boolean"
+        },
+        "restoredAt": {
+          "type": "string"
+        },
+        "running": {
+          "type": "boolean"
+        },
+        "startedAt": {
+          "type": "string"
+        },
+        "status": {
+          "type": "string"
+        },
+        "stoppedByUser": {
+          "type": "boolean"
+        }
+      },
+      "type": "object"
+    },
+    "podman:index:InspectDevice": {
+      "properties": {
+        "cgroupPermissions": {
+          "type": "string",
+          "description": "CgroupPermissions is the permissions of the mounted device.\nPresently not populated.\nTODO."
+        },
+        "pathInContainer": {
+          "type": "string",
+          "description": "PathInContainer is the path of the device within the container."
+        },
+        "pathOnHost": {
+          "type": "string",
+          "description": "PathOnHost is the path of the device on the host."
+        }
+      },
+      "type": "object"
+    },
+    "podman:index:InspectIDMappings": {
+      "properties": {
+        "gidMap": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "uidMap": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "type": "object"
+    },
+    "podman:index:InspectLogConfig": {
+      "description": "InspectLogConfig holds information about a container's configured log driver",
+      "properties": {
+        "config": {
+          "type": "object"
+        },
+        "path": {
+          "type": "string",
+          "description": "Path specifies a path to the log file"
+        },
+        "size": {
+          "type": "string",
+          "description": "Size specifies a maximum size of the container log"
+        },
+        "tag": {
+          "type": "string",
+          "description": "Tag specifies a custom log tag for the container"
+        },
+        "type": {
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
+    "podman:index:InspectNetworkSettings": {
+      "description": "InspectNetworkSettings holds information about the network settings of the\ncontainer.\nMany fields are maintained only for compatibility with `docker inspect` and\nare unused within Libpod.",
+      "properties": {
+        "additionalMACAddresses": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "AdditionalMacAddresses is a set of additional MAC Addresses beyond\nthe first. The network backend may configure more than one interface\nfor a single network, which can cause this."
+        },
+        "bridge": {
+          "type": "string"
+        },
+        "endpointID": {
+          "type": "string",
+          "description": "EndpointID is unused, maintained exclusively for compatibility."
+        },
+        "gateway": {
+          "type": "string",
+          "description": "Gateway is the IP address of the gateway this network will use."
+        },
+        "globalIPv6Address": {
+          "type": "string",
+          "description": "GlobalIPv6Address is the global-scope IPv6 Address for this network."
+        },
+        "globalIPv6PrefixLen": {
+          "type": "integer",
+          "description": "GlobalIPv6PrefixLen is the length of the subnet mask of this network."
+        },
+        "hairpinMode": {
+          "type": "boolean"
+        },
+        "iPAddress": {
+          "type": "string",
+          "description": "IPAddress is the IP address for this network."
+        },
+        "iPPrefixLen": {
+          "type": "integer",
+          "description": "IPPrefixLen is the length of the subnet mask of this network."
+        },
+        "iPv6Gateway": {
+          "type": "string",
+          "description": "IPv6Gateway is the IPv6 gateway this network will use."
+        },
+        "linkLocalIPv6Address": {
+          "type": "string"
+        },
+        "linkLocalIPv6PrefixLen": {
+          "type": "integer"
+        },
+        "macAddress": {
+          "type": "string",
+          "description": "MacAddress is the MAC address for the interface in this network."
+        },
+        "networks": {
+          "type": "object",
+          "description": "Networks contains information on non-default networks this\ncontainer has joined.\nIt is a map of network name to network information."
+        },
+        "ports": {
+          "type": "object"
+        },
+        "sandboxID": {
+          "type": "string"
+        },
+        "sandboxKey": {
+          "type": "string"
+        },
+        "secondaryIPAddresses": {
+          "type": "array",
+          "items": {
+            "$ref": "#/types/podman:index:Address"
+          },
+          "description": "SecondaryIPAddresses is a list of extra IP Addresses that the\ncontainer has been assigned in this network."
+        },
+        "secondaryIPv6Addresses": {
+          "type": "array",
+          "items": {
+            "$ref": "#/types/podman:index:Address"
+          },
+          "description": "SecondaryIPv6Addresses is a list of extra IPv6 Addresses that the\ncontainer has been assigned in this network."
+        }
+      },
+      "type": "object"
+    },
+    "podman:index:InspectPodContainerInfo": {
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "ID is the ID of the container."
+        },
+        "name": {
+          "type": "string",
+          "description": "Name is the name of the container."
+        },
+        "state": {
+          "type": "string",
+          "description": "State is the current status of the container."
+        }
+      },
+      "type": "object"
+    },
+    "podman:index:InspectPodInfraConfig": {
+      "description": "InspectPodInfraConfig contains the configuration of the pod's infra\ncontainer.",
+      "properties": {
+        "cpuPeriod": {
+          "type": "integer",
+          "description": "CPUPeriod contains the CPU period of the pod"
+        },
+        "cpuQuota": {
+          "type": "integer",
+          "description": "CPUQuota contains the CPU quota of the pod"
+        },
+        "cpusetCpus": {
+          "type": "string",
+          "description": "CPUSetCPUs contains linux specific CPU data for the container"
+        },
+        "dNSOption": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "DNSOption is a set of DNS options that will be used by the infra\ncontainer's resolv.conf and shared with the remainder of the pod."
+        },
+        "dNSSearch": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "DNSSearch is a set of DNS search domains that will be used by the\ninfra container's resolv.conf and shared with the remainder of the\npod."
+        },
+        "dNSServer": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "DNSServer is a set of DNS Servers that will be used by the infra\ncontainer's resolv.conf and shared with the remainder of the pod."
+        },
+        "hostAdd": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "HostAdd adds a number of hosts to the infra container's resolv.conf\nwhich will be shared with the rest of the pod."
+        },
+        "hostNetwork": {
+          "type": "boolean",
+          "description": "HostNetwork is whether the infra container (and thus the whole pod)\nwill use the host's network and not create a network namespace."
+        },
+        "hostsFile": {
+          "type": "string",
+          "description": "HostsFile is the base file to create the `/etc/hosts` file inside the infra container\nwhich will be shared with the rest of the pod."
+        },
+        "networkOptions": {
+          "type": "object",
+          "description": "NetworkOptions are additional options for each network"
+        },
+        "networks": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Networks is a list of networks the pod will join."
+        },
+        "noManageHostname": {
+          "type": "boolean",
+          "description": "NoManageHostname indicates that the pod will not manage /etc/hostname\nand instead each container will handle their own."
+        },
+        "noManageHosts": {
+          "type": "boolean",
+          "description": "NoManageHosts indicates that the pod will not manage /etc/hosts and\ninstead each container will handle their own."
+        },
+        "noManageResolvConf": {
+          "type": "boolean",
+          "description": "NoManageResolvConf indicates that the pod will not manage resolv.conf\nand instead each container will handle their own."
+        },
+        "pidNs": {
+          "type": "string",
+          "description": "Pid is the PID namespace mode of the pod's infra container"
+        },
+        "portBindings": {
+          "type": "object",
+          "description": "PortBindings are ports that will be forwarded to the infra container\nand then shared with the pod."
+        },
+        "staticIP": {
+          "type": "string",
+          "description": "StaticIP is a static IPv4 that will be assigned to the infra\ncontainer and then used by the pod."
+        },
+        "staticMAC": {
+          "type": "string",
+          "description": "StaticMAC is a static MAC address that will be assigned to the infra\ncontainer and then used by the pod."
+        },
+        "userns": {
+          "type": "string",
+          "description": "UserNS is the usernamespace that all the containers in the pod will join."
+        },
+        "utsNs": {
+          "type": "string",
+          "description": "UtsNS is the uts namespace that all containers in the pod will join"
+        }
+      },
+      "type": "object"
+    },
+    "podman:index:InspectRestartPolicy": {
+      "properties": {
+        "maximumRetryCount": {
+          "type": "integer",
+          "description": "MaximumRetryCount is the maximum number of retries allowed if the\n\"on-failure\" restart policy is in use. Not used if \"on-failure\" is\nnot set."
+        },
+        "name": {
+          "type": "string",
+          "description": "Name contains the container's restart policy.\nAllowable values are \"no\" or \"\" (take no action),\n\"on-failure\" (restart on non-zero exit code, with an optional max\nretry count), and \"always\" (always restart on container stop, unless\nexplicitly requested by API).\nNote that this is NOT actually a name of any sort - the poor naming\nis for Docker compatibility."
+        }
+      },
+      "type": "object"
+    },
+    "podman:index:InspectRootFS": {
+      "properties": {
+        "layers": {
+          "type": "array",
+          "items": {
+            "$ref": "#/types/podman:index:Digest"
+          }
+        },
+        "type": {
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
+    "podman:index:InspectSecret": {
+      "description": "InspectSecret contains information on secrets mounted inside the container",
+      "properties": {
+        "gID": {
+          "type": "integer",
+          "description": "ID is the GID of the mounted secret file"
+        },
+        "iD": {
+          "type": "string",
+          "description": "ID is the ID of the secret"
+        },
+        "mode": {
+          "type": "integer",
+          "description": "ID is the ID of the mode of the mounted secret file"
+        },
+        "name": {
+          "type": "string",
+          "description": "Name is the name of the secret"
+        },
+        "uID": {
+          "type": "integer",
+          "description": "ID is the UID of the mounted secret file"
+        }
+      },
+      "type": "object"
+    },
+    "podman:index:InspectUlimit": {
+      "properties": {
+        "hard": {
+          "type": "integer",
+          "description": "Hard is the hard limit that will be applied."
+        },
+        "name": {
+          "type": "string",
+          "description": "Name is the name (type) of the ulimit."
+        },
+        "soft": {
+          "type": "integer",
+          "description": "Soft is the soft limit that will be applied."
+        }
+      },
+      "type": "object"
+    },
+    "podman:index:LeaseRange": {
+      "properties": {
+        "endIp": {
+          "type": "string",
+          "description": "EndIP last IP in the subnet which should be used to assign ips."
+        },
+        "startIp": {
+          "type": "string",
+          "description": "StartIP first IP in the subnet which should be used to assign ips."
+        }
+      },
+      "type": "object"
+    },
+    "podman:index:LibpodDriverData": {
+      "description": "DriverData handles the data for a storage driver",
+      "properties": {
+        "data": {
+          "type": "object"
+        },
+        "name": {
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
+    "podman:index:LinuxBlockIO": {
+      "description": "LinuxBlockIO for Linux cgroup 'blkio' resource management",
+      "properties": {
+        "leafWeight": {
+          "type": "integer",
+          "description": "Specifies tasks' weight in the given cgroup while competing with the cgroup's child cgroups, CFQ scheduler only"
+        },
+        "throttleReadBpsDevice": {
+          "type": "array",
+          "items": {
+            "$ref": "#/types/podman:index:LinuxThrottleDevice"
+          },
+          "description": "IO read rate limit per cgroup per device, bytes per second"
+        },
+        "throttleReadIOPSDevice": {
+          "type": "array",
+          "items": {
+            "$ref": "#/types/podman:index:LinuxThrottleDevice"
+          },
+          "description": "IO read rate limit per cgroup per device, IO per second"
+        },
+        "throttleWriteBpsDevice": {
+          "type": "array",
+          "items": {
+            "$ref": "#/types/podman:index:LinuxThrottleDevice"
+          },
+          "description": "IO write rate limit per cgroup per device, bytes per second"
+        },
+        "throttleWriteIOPSDevice": {
+          "type": "array",
+          "items": {
+            "$ref": "#/types/podman:index:LinuxThrottleDevice"
+          },
+          "description": "IO write rate limit per cgroup per device, IO per second"
+        },
+        "weight": {
+          "type": "integer",
+          "description": "Specifies per cgroup weight"
+        },
+        "weightDevice": {
+          "type": "array",
+          "items": {
+            "$ref": "#/types/podman:index:LinuxWeightDevice"
+          },
+          "description": "Weight per cgroup per device, can override BlkioWeight"
+        }
+      },
+      "type": "object"
+    },
+    "podman:index:LinuxCPU": {
+      "description": "LinuxCPU for Linux cgroup 'cpu' resource management",
+      "properties": {
+        "burst": {
+          "type": "integer",
+          "description": "CPU hardcap burst limit (in usecs). Allowed accumulated cpu time additionally for burst in a\ngiven period."
+        },
+        "cpus": {
+          "type": "string",
+          "description": "CPUs to use within the cpuset. Default is to use any CPU available."
+        },
+        "idle": {
+          "type": "integer",
+          "description": "cgroups are configured with minimum weight, 0: default behavior, 1: SCHED_IDLE."
+        },
+        "mems": {
+          "type": "string",
+          "description": "List of memory nodes in the cpuset. Default is to use any available memory node."
+        },
+        "period": {
+          "type": "integer",
+          "description": "CPU period to be used for hardcapping (in usecs)."
+        },
+        "quota": {
+          "type": "integer",
+          "description": "CPU hardcap limit (in usecs). Allowed cpu time in a given period."
+        },
+        "realtimePeriod": {
+          "type": "integer",
+          "description": "CPU period to be used for realtime scheduling (in usecs)."
+        },
+        "realtimeRuntime": {
+          "type": "integer",
+          "description": "How much time realtime scheduling may use (in usecs)."
+        },
+        "shares": {
+          "type": "integer",
+          "description": "CPU shares (relative weight (ratio) vs. other cgroups with cpu shares)."
+        }
+      },
+      "type": "object"
+    },
+    "podman:index:LinuxDevice": {
+      "description": "LinuxDevice represents the mknod information for a Linux special device file",
+      "properties": {
+        "fileMode": {
+          "$ref": "#/types/podman:index:FileMode"
+        },
+        "gid": {
+          "type": "integer",
+          "description": "Gid of the device."
+        },
+        "major": {
+          "type": "integer",
+          "description": "Major is the device's major number."
+        },
+        "minor": {
+          "type": "integer",
+          "description": "Minor is the device's minor number."
+        },
+        "path": {
+          "type": "string",
+          "description": "Path to the device."
+        },
+        "type": {
+          "type": "string",
+          "description": "Device type, block, char, etc."
+        },
+        "uid": {
+          "type": "integer",
+          "description": "UID of the device."
+        }
+      },
+      "type": "object"
+    },
+    "podman:index:LinuxDeviceCgroup": {
+      "description": "LinuxDeviceCgroup represents a device rule for the devices specified to\nthe device controller",
+      "properties": {
+        "access": {
+          "type": "string",
+          "description": "Cgroup access permissions format, rwm."
+        },
+        "allow": {
+          "type": "boolean",
+          "description": "Allow or deny"
+        },
+        "major": {
+          "type": "integer",
+          "description": "Major is the device's major number."
+        },
+        "minor": {
+          "type": "integer",
+          "description": "Minor is the device's minor number."
+        },
+        "type": {
+          "type": "string",
+          "description": "Device type, block, char, etc."
+        }
+      },
+      "type": "object"
+    },
+    "podman:index:LinuxHugepageLimit": {
+      "description": "Default to reservation limits if supported. Otherwise fallback to page fault limits.",
+      "properties": {
+        "limit": {
+          "type": "integer",
+          "description": "Limit is the limit of \"hugepagesize\" hugetlb reservations (if supported) or usage."
+        },
+        "pageSize": {
+          "type": "string",
+          "description": "Pagesize is the hugepage size.\nFormat: \"\u003csize\u003e\u003cunit-prefix\u003eB' (e.g. 64KB, 2MB, 1GB, etc.)."
+        }
+      },
+      "type": "object"
+    },
+    "podman:index:LinuxIDMapping": {
+      "description": "LinuxIDMapping specifies UID/GID mappings",
+      "properties": {
+        "containerID": {
+          "type": "integer",
+          "description": "ContainerID is the starting UID/GID in the container"
+        },
+        "hostID": {
+          "type": "integer",
+          "description": "HostID is the starting UID/GID on the host to be mapped to 'ContainerID'"
+        },
+        "size": {
+          "type": "integer",
+          "description": "Size is the number of IDs to be mapped"
+        }
+      },
+      "type": "object"
+    },
+    "podman:index:LinuxIntelRdt": {
+      "description": "LinuxIntelRdt has container runtime resource constraints for Intel RDT CAT and MBA\nfeatures and flags enabling Intel RDT CMT and MBM features.\nIntel RDT features are available in Linux 4.14 and newer kernel versions.",
+      "properties": {
+        "closID": {
+          "type": "string",
+          "description": "The identity for RDT Class of Service"
+        },
+        "enableMonitoring": {
+          "type": "boolean",
+          "description": "EnableMonitoring enables resctrl monitoring for the container. This will\ncreate a dedicated resctrl monitoring group for the container."
+        },
+        "l3CacheSchema": {
+          "type": "string",
+          "description": "The schema for L3 cache id and capacity bitmask (CBM)\nFormat: \"L3:\u003ccache_id0\u003e=\u003ccbm0\u003e;\u003ccache_id1\u003e=\u003ccbm1\u003e;...\"\nNOTE: Should not be specified if Schemata is non-empty."
+        },
+        "memBwSchema": {
+          "type": "string",
+          "description": "The schema of memory bandwidth per L3 cache id\nFormat: \"MB:\u003ccache_id0\u003e=bandwidth0;\u003ccache_id1\u003e=bandwidth1;...\"\nThe unit of memory bandwidth is specified in \"percentages\" by\ndefault, and in \"MBps\" if MBA Software Controller is enabled.\nNOTE: Should not be specified if Schemata is non-empty."
+        },
+        "schemata": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Schemata specifies the complete schemata to be written as is to the\nschemata file in resctrl fs. Each element represents a single line in the schemata file.\nNOTE: This will overwrite schemas specified in the L3CacheSchema and/or\nMemBwSchema fields."
+        }
+      },
+      "type": "object"
+    },
+    "podman:index:LinuxInterfacePriority": {
+      "description": "LinuxInterfacePriority for network interfaces",
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "Name is the name of the network interface"
+        },
+        "priority": {
+          "type": "integer",
+          "description": "Priority for the interface"
+        }
+      },
+      "type": "object"
+    },
+    "podman:index:LinuxMemory": {
+      "description": "LinuxMemory for Linux cgroup 'memory' resource management",
+      "properties": {
+        "checkBeforeUpdate": {
+          "type": "boolean",
+          "description": "CheckBeforeUpdate enables checking if a new memory limit is lower\nthan the current usage during update, and if so, rejecting the new\nlimit."
+        },
+        "disableOOMKiller": {
+          "type": "boolean",
+          "description": "DisableOOMKiller disables the OOM killer for out of memory conditions"
+        },
+        "kernel": {
+          "type": "integer",
+          "description": "Kernel memory limit (in bytes).\n\nDeprecated: kernel-memory limits are not supported in cgroups v2, and\nwere obsoleted in [kernel v5.4]. This field should no longer be used,\nas it may be ignored by runtimes.\n\n[kernel v5.4]: https://github.com/torvalds/linux/commit/0158115f702b0ba208ab0"
+        },
+        "kernelTCP": {
+          "type": "integer",
+          "description": "Kernel memory limit for tcp (in bytes)"
+        },
+        "limit": {
+          "type": "integer",
+          "description": "Memory limit (in bytes)."
+        },
+        "reservation": {
+          "type": "integer",
+          "description": "Memory reservation or soft_limit (in bytes)."
+        },
+        "swap": {
+          "type": "integer",
+          "description": "Total memory limit (memory + swap)."
+        },
+        "swappiness": {
+          "type": "integer",
+          "description": "How aggressive the kernel will swap memory pages."
+        },
+        "useHierarchy": {
+          "type": "boolean",
+          "description": "Enables hierarchical memory accounting"
+        }
+      },
+      "type": "object"
+    },
+    "podman:index:LinuxNetwork": {
+      "description": "LinuxNetwork identification and priority configuration",
+      "properties": {
+        "classID": {
+          "type": "integer",
+          "description": "Set class identifier for container's network packets"
+        },
+        "priorities": {
+          "type": "array",
+          "items": {
+            "$ref": "#/types/podman:index:LinuxInterfacePriority"
+          },
+          "description": "Set priority of network traffic for container"
+        }
+      },
+      "type": "object"
+    },
+    "podman:index:LinuxPersonality": {
+      "description": "LinuxPersonality represents the Linux personality syscall input",
+      "properties": {
+        "domain": {
+          "$ref": "#/types/podman:index:LinuxPersonalityDomain"
+        },
+        "flags": {
+          "type": "array",
+          "items": {
+            "$ref": "#/types/podman:index:LinuxPersonalityFlag"
+          },
+          "description": "Additional flags"
+        }
+      },
+      "type": "object"
+    },
+    "podman:index:LinuxPersonalityDomain": {
+      "type": "object"
+    },
+    "podman:index:LinuxPersonalityFlag": {
+      "type": "object"
+    },
+    "podman:index:LinuxPids": {
+      "description": "LinuxPids for Linux cgroup 'pids' resource management (Linux 4.3)",
+      "properties": {
+        "limit": {
+          "type": "integer",
+          "description": "Maximum number of PIDs. Default is \"no limit\"."
+        }
+      },
+      "type": "object"
+    },
+    "podman:index:LinuxResources": {
+      "description": "LinuxResources has container runtime resource constraints",
+      "properties": {
+        "blockIO": {
+          "$ref": "#/types/podman:index:LinuxBlockIO"
+        },
+        "cpu": {
+          "$ref": "#/types/podman:index:LinuxCPU"
+        },
+        "devices": {
+          "type": "array",
+          "items": {
+            "$ref": "#/types/podman:index:LinuxDeviceCgroup"
+          },
+          "description": "Devices configures the device allowlist."
+        },
+        "hugepageLimits": {
+          "type": "array",
+          "items": {
+            "$ref": "#/types/podman:index:LinuxHugepageLimit"
+          },
+          "description": "Hugetlb limits (in bytes). Default to reservation limits if supported."
+        },
+        "memory": {
+          "$ref": "#/types/podman:index:LinuxMemory"
+        },
+        "network": {
+          "$ref": "#/types/podman:index:LinuxNetwork"
+        },
+        "pids": {
+          "$ref": "#/types/podman:index:LinuxPids"
+        },
+        "rdma": {
+          "type": "object",
+          "description": "Rdma resource restriction configuration.\nLimits are a set of key value pairs that define RDMA resource limits,\nwhere the key is device name and value is resource limits."
+        },
+        "unified": {
+          "type": "object",
+          "description": "Unified resources."
+        }
+      },
+      "type": "object"
+    },
+    "podman:index:LinuxThrottleDevice": {
+      "description": "LinuxThrottleDevice struct holds a `major:minor rate_per_second` pair",
+      "properties": {
+        "major": {
+          "type": "integer",
+          "description": "Major is the device's major number."
+        },
+        "minor": {
+          "type": "integer",
+          "description": "Minor is the device's minor number."
+        },
+        "rate": {
+          "type": "integer",
+          "description": "Rate is the IO rate limit per cgroup per device"
+        }
+      },
+      "type": "object"
+    },
+    "podman:index:LinuxWeightDevice": {
+      "description": "LinuxWeightDevice struct holds a `major:minor weight` pair for weightDevice",
+      "properties": {
+        "leafWeight": {
+          "type": "integer",
+          "description": "LeafWeight is the bandwidth rate for the device while competing with the cgroup's child cgroups, CFQ scheduler only"
+        },
+        "major": {
+          "type": "integer",
+          "description": "Major is the device's major number."
+        },
+        "minor": {
+          "type": "integer",
+          "description": "Minor is the device's minor number."
+        },
+        "weight": {
+          "type": "integer",
+          "description": "Weight is the bandwidth rate for the device."
+        }
+      },
+      "type": "object"
+    },
+    "podman:index:LogConfigLibpod": {
+      "description": "LogConfig describes the logging characteristics for a container",
+      "properties": {
+        "driver": {
+          "type": "string",
+          "description": "LogDriver is the container's log driver.\nOptional."
+        },
+        "labels": {
+          "type": "object",
+          "description": "A set of log labels to apply\nOnly available if LogDriver is set to \"journald\".\nOptional"
+        },
+        "options": {
+          "type": "object",
+          "description": "A set of options to accompany the log driver.\nOptional."
+        },
+        "path": {
+          "type": "string",
+          "description": "LogPath is the path the container's logs will be stored at.\nOnly available if LogDriver is set to \"json-file\" or \"k8s-file\".\nOptional."
+        },
+        "size": {
+          "type": "integer",
+          "description": "Size is the maximum size of the log file\nOptional."
+        }
+      },
+      "type": "object"
+    },
+    "podman:index:NamedVolume": {
+      "description": "NamedVolume holds information about a named volume that will be mounted into\nthe container.",
+      "properties": {
+        "dest": {
+          "type": "string",
+          "description": "Destination to mount the named volume within the container. Must be\nan absolute path. Path will be created if it does not exist."
+        },
+        "isAnonymous": {
+          "type": "boolean",
+          "description": "IsAnonymous sets the named volume as anonymous even if it has a name\nThis is used for emptyDir volumes from a kube yaml"
+        },
+        "name": {
+          "type": "string",
+          "description": "Name is the name of the named volume to be mounted. May be empty.\nIf empty, a new named volume with a pseudorandomly generated name\nwill be mounted at the given destination."
+        },
+        "options": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Options are options that the named volume will be mounted with."
+        },
+        "subPath": {
+          "type": "string",
+          "description": "SubPath stores the sub directory of the named volume to be mounted in the container"
+        }
+      },
+      "type": "object"
+    },
+    "podman:index:Namespace": {
+      "description": "Namespace describes the namespace",
+      "properties": {
+        "nsmode": {
+          "$ref": "#/types/podman:index:NamespaceMode"
+        },
+        "value": {
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
+    "podman:index:NamespaceMode": {
+      "type": "object"
+    },
+    "podman:index:OCI1": {
+      "description": "The underlying data from imgspecv1.Manifest is also available.",
+      "properties": {
+        "annotations": {
+          "type": "object",
+          "description": "Annotations contains arbitrary metadata for the image manifest."
+        },
+        "artifactType": {
+          "type": "string",
+          "description": "ArtifactType specifies the IANA media type of artifact when the manifest is used for an artifact."
+        },
+        "config": {
+          "$ref": "#/types/podman:index:Descriptor"
+        },
+        "layers": {
+          "type": "array",
+          "items": {
+            "$ref": "#/types/podman:index:Descriptor"
+          },
+          "description": "Layers is an indexed list of layers referenced by the manifest."
+        },
+        "mediaType": {
+          "type": "string",
+          "description": "MediaType specifies the type of this document data structure e.g. `application/vnd.oci.image.manifest.v1+json`"
+        },
+        "schemaVersion": {
+          "type": "integer",
+          "description": "SchemaVersion is the image manifest schema that this image follows"
+        },
+        "subject": {
+          "$ref": "#/types/podman:index:Descriptor"
+        }
+      },
+      "type": "object"
+    },
+    "podman:index:OverlayVolume": {
+      "description": "OverlayVolume holds information about an overlay volume that will be mounted into\nthe container.",
+      "properties": {
+        "destination": {
+          "type": "string",
+          "description": "Destination is the absolute path where the mount will be placed in the container."
+        },
+        "options": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Options holds overlay volume options."
+        },
+        "source": {
+          "type": "string",
+          "description": "Source specifies the source path of the mount."
+        }
+      },
+      "type": "object"
+    },
+    "podman:index:POSIXRlimit": {
+      "description": "POSIXRlimit type and restrictions",
+      "properties": {
+        "hard": {
+          "type": "integer",
+          "description": "Hard is the hard limit for the specified type"
+        },
+        "soft": {
+          "type": "integer",
+          "description": "Soft is the soft limit for the specified type"
+        },
+        "type": {
+          "type": "string",
+          "description": "Type of the rlimit to set"
+        }
+      },
+      "type": "object"
+    },
+    "podman:index:Platform": {
+      "properties": {
+        "architecture": {
+          "type": "string",
+          "description": "Architecture field specifies the CPU architecture, for example\n`amd64` or `ppc64le`."
+        },
+        "os": {
+          "type": "string",
+          "description": "OS specifies the operating system, for example `linux` or `windows`."
+        },
+        "osFeatures": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "OSFeatures is an optional field specifying an array of strings,\neach listing a required OS feature (for example on Windows `win32k`)."
+        },
+        "osVersion": {
+          "type": "string",
+          "description": "OSVersion is an optional field specifying the operating system\nversion, for example on Windows `10.0.14393.1066`."
+        },
+        "variant": {
+          "type": "string",
+          "description": "Variant is an optional field specifying a variant of the CPU, for\nexample `v7` to specify ARMv7 when architecture is `arm`."
+        }
+      },
+      "type": "object"
+    },
+    "podman:index:PortMapping": {
+      "properties": {
+        "containerPort": {
+          "type": "integer",
+          "description": "ContainerPort is the port number that will be exposed from the\ncontainer.\nMandatory."
+        },
+        "hostIp": {
+          "type": "string",
+          "description": "HostIP is the IP that we will bind to on the host.\nIf unset, assumed to be 0.0.0.0 (all interfaces)."
+        },
+        "hostPort": {
+          "type": "integer",
+          "description": "HostPort is the port number that will be forwarded from the host into\nthe container.\nIf omitted, a random port on the host (guaranteed to be over 1024)\nwill be assigned."
+        },
+        "protocol": {
+          "type": "string",
+          "description": "Protocol is the protocol forward.\nMust be either \"tcp\", \"udp\", and \"sctp\", or some combination of these\nseparated by commas.\nIf unset, assumed to be TCP."
+        },
+        "range": {
+          "type": "integer",
+          "description": "Range is the number of ports that will be forwarded, starting at\nHostPort and ContainerPort and counting up.\nThis is 1-indexed, so 1 is assumed to be a single port (only the\nHostport:Containerport mapping will be added), 2 is two ports (both\nHostport:Containerport and Hostport+1:Containerport+1), etc.\nIf unset, assumed to be 1 (a single port).\nBoth hostport + range and containerport + range must be less than\n65536."
+        }
+      },
+      "type": "object"
+    },
+    "podman:index:Route": {
+      "properties": {
+        "destination": {
+          "type": "string",
+          "description": "Destination for this route in CIDR form."
+        },
+        "gateway": {
+          "type": "string",
+          "description": "Gateway IP for this route. Required for unicast routes, must be empty for blackhole/unreachable/prohibit."
+        },
+        "metric": {
+          "type": "integer",
+          "description": "Metric for this route. Optional."
+        },
+        "routeType": {
+          "$ref": "#/types/podman:index:RouteType"
+        }
+      },
+      "type": "object"
+    },
+    "podman:index:RouteType": {
+      "type": "object"
+    },
+    "podman:index:Schema2HealthConfig": {
+      "description": "Schema2HealthConfig is a HealthConfig, which holds configuration settings\nfor the HEALTHCHECK feature, from docker/docker/api/types/container.",
+      "properties": {
+        "interval": {
+          "$ref": "#/types/podman:index:Duration"
+        },
+        "retries": {
+          "type": "integer",
+          "description": "Retries is the number of consecutive failures needed to consider a container as unhealthy.\nZero means inherit."
+        },
+        "startInterval": {
+          "$ref": "#/types/podman:index:Duration"
+        },
+        "startPeriod": {
+          "$ref": "#/types/podman:index:Duration"
+        },
+        "test": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Test is the test to perform to check that the container is healthy.\nAn empty slice means to inherit the default.\nThe options are:\n{} : inherit healthcheck\n{\"NONE\"} : disable healthcheck\n{\"CMD\", args...} : exec arguments directly\n{\"CMD-SHELL\", command} : run command with system's default shell"
+        },
+        "timeout": {
+          "$ref": "#/types/podman:index:Duration"
+        }
+      },
+      "type": "object"
+    },
+    "podman:index:SecretDriverSpec": {
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "options": {
+          "type": "object"
+        }
+      },
+      "type": "object"
+    },
+    "podman:index:SecretSpec": {
+      "properties": {
+        "driver": {
+          "$ref": "#/types/podman:index:SecretDriverSpec"
+        },
+        "labels": {
+          "type": "object"
+        },
+        "name": {
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
+    "podman:index:Signal": {
+      "description": "It implements the [os.Signal] interface.",
+      "type": "object"
+    },
+    "podman:index:SpecgenSecret": {
+      "properties": {
+        "gID": {
+          "type": "integer"
+        },
+        "mode": {
+          "type": "integer"
+        },
+        "source": {
+          "type": "string"
+        },
+        "target": {
+          "type": "string"
+        },
+        "uID": {
+          "type": "integer"
+        }
+      },
+      "type": "object"
+    },
+    "podman:index:SpecsGoMount": {
+      "properties": {
+        "destination": {
+          "type": "string",
+          "description": "Destination is the absolute path where the mount will be placed in the container."
+        },
+        "gidMappings": {
+          "type": "array",
+          "items": {
+            "$ref": "#/types/podman:index:LinuxIDMapping"
+          }
+        },
+        "options": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Options are fstab style mount options."
+        },
+        "source": {
+          "type": "string",
+          "description": "Source specifies the source path of the mount."
+        },
+        "type": {
+          "type": "string",
+          "description": "Type specifies the mount kind."
+        },
+        "uidMappings": {
+          "type": "array",
+          "items": {
+            "$ref": "#/types/podman:index:LinuxIDMapping"
+          },
+          "description": "UID/GID mappings used for changing file owners w/o calling chown, fs should support it.\nEvery mount point could have its own mapping."
+        }
+      },
+      "type": "object"
+    },
+    "podman:index:StartupHealthCheck": {
+      "properties": {
+        "interval": {
+          "$ref": "#/types/podman:index:Duration"
+        },
+        "retries": {
+          "type": "integer",
+          "description": "Retries is the number of consecutive failures needed to consider a container as unhealthy.\nZero means inherit."
+        },
+        "startInterval": {
+          "$ref": "#/types/podman:index:Duration"
+        },
+        "startPeriod": {
+          "$ref": "#/types/podman:index:Duration"
+        },
+        "successes": {
+          "type": "integer",
+          "description": "Successes are the number of successes required to mark the startup HC\nas passed.\nIf set to 0, a single success will mark the HC as passed."
+        },
+        "test": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Test is the test to perform to check that the container is healthy.\nAn empty slice means to inherit the default.\nThe options are:\n{} : inherit healthcheck\n{\"NONE\"} : disable healthcheck\n{\"CMD\", args...} : exec arguments directly\n{\"CMD-SHELL\", command} : run command with system's default shell"
+        },
+        "timeout": {
+          "$ref": "#/types/podman:index:Duration"
+        }
+      },
+      "type": "object"
+    },
+    "podman:index:Subnet": {
+      "properties": {
+        "gateway": {
+          "type": "string",
+          "description": "Gateway IP for this Network."
+        },
+        "leaseRange": {
+          "$ref": "#/types/podman:index:LeaseRange"
+        },
+        "subnet": {
+          "type": "string",
+          "description": "Subnet for this Network in CIDR form."
+        }
+      },
+      "type": "object"
+    }
+  },
+  "provider": {
+    "inputProperties": {
+      "apiKey": {
+        "type": "string",
+        "description": "API key value.",
+        "secret": true
+      },
+      "apiKeyHeader": {
+        "type": "string",
+        "description": "HTTP header name for the API key (default: api_key)."
+      },
+      "baseUrl": {
+        "type": "string",
+        "description": "Base URL for the API (overrides the spec server URL)."
+      },
+      "bearerToken": {
+        "type": "string",
+        "description": "Bearer token for the Authorization header.",
+        "secret": true
+      }
+    }
+  },
+  "resources": {
+    "podman:artifacts:Artifact": {
+      "properties": {
+        "digest": {
+          "$ref": "#/types/podman:index:Digest"
+        },
+        "manifest": {
+          "$ref": "#/types/podman:index:OCI1"
+        },
+        "name": {
+          "type": "string",
+          "description": "Mandatory reference to the artifact (e.g., quay.io/image/artifact:tag)"
+        },
+        "retry": {
+          "type": "integer",
+          "description": "Number of times to retry in case of failure when performing pull"
+        },
+        "retryDelay": {
+          "type": "string",
+          "description": "Delay between retries in case of pull failures (e.g., 10s)"
+        },
+        "tlsVerify": {
+          "type": "boolean",
+          "description": "Require TLS verification"
+        }
+      },
+      "inputProperties": {
+        "name": {
+          "type": "string",
+          "description": "Mandatory reference to the artifact (e.g., quay.io/image/artifact:tag)"
+        },
+        "retry": {
+          "type": "integer",
+          "description": "Number of times to retry in case of failure when performing pull"
+        },
+        "retryDelay": {
+          "type": "string",
+          "description": "Delay between retries in case of pull failures (e.g., 10s)"
+        },
+        "tlsVerify": {
+          "type": "boolean",
+          "description": "Require TLS verification"
+        }
+      },
+      "requiredInputs": [
+        "name"
+      ]
+    },
+    "podman:containers:Container": {
+      "properties": {
+        "annotations": {
+          "type": "object",
+          "description": "Annotations are key-value options passed into the container runtime\nthat can be used to trigger special behavior.\nOptional."
+        },
+        "appArmorProfile": {
+          "type": "string"
+        },
+        "apparmorProfile": {
+          "type": "string",
+          "description": "ApparmorProfile is the name of the Apparmor profile the container\nwill use.\nOptional."
+        },
+        "args": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "artifactVolumes": {
+          "type": "array",
+          "items": {
+            "$ref": "#/types/podman:index:ArtifactVolume"
+          },
+          "description": "ArtifactVolumes volumes based on an existing artifact."
+        },
+        "baseHostsFile": {
+          "type": "string",
+          "description": "BaseHostsFile is the base file to create the `/etc/hosts` file inside the container.\nThis must either be an absolute path to a file on the host system, or one of the\nspecial flags `image` or `none`.\nIf it is empty it defaults to the base_hosts_file configuration in containers.conf.\nOptional."
+        },
+        "boundingCaps": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "capAdd": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "CapAdd are capabilities which will be added to the container.\nConflicts with Privileged.\nOptional."
+        },
+        "capDrop": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "CapDrop are capabilities which will be removed from the container.\nConflicts with Privileged.\nOptional."
+        },
+        "cgroupParent": {
+          "type": "string",
+          "description": "CgroupParent is the container's Cgroup parent.\nIf not set, the default for the current cgroup driver will be used.\nOptional."
+        },
+        "cgroupns": {
+          "$ref": "#/types/podman:index:Namespace"
+        },
+        "cgroupsMode": {
+          "type": "string",
+          "description": "CgroupsMode sets a policy for how cgroups will be created for the\ncontainer, including the ability to disable creation entirely.\nOptional."
+        },
+        "chrootDirectories": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "ChrootDirs is an additional set of directories that need to be\ntreated as root directories. Standard bind mounts will be mounted\ninto paths relative to these directories.\nOptional."
+        },
+        "command": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Command is the container's command.\nIf not given and Image is specified, this will be populated by the\nimage's configuration.\nOptional."
+        },
+        "config": {
+          "$ref": "#/types/podman:index:InspectContainerConfig"
+        },
+        "conmonPidFile": {
+          "type": "string",
+          "description": "ConmonPidFile is a path at which a PID file for Conmon will be\nplaced.\nIf not given, a default location will be used.\nOptional."
+        },
+        "containerCreateCommand": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "ContainerCreateCommand is the command that was used to create this\ncontainer.\nThis will be shown in the output of Inspect() on the container, and\nmay also be used by some tools that wish to recreate the container\n(e.g. `podman generate systemd --new`).\nOptional."
+        },
+        "createWorkingDir": {
+          "type": "boolean",
+          "description": "Create the working directory if it doesn't exist.\nIf unset, it doesn't create it.\nOptional."
+        },
+        "created": {
+          "type": "string"
+        },
+        "dependencies": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "dependencyContainers": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "DependencyContainers is an array of containers this container\ndepends on. Dependency containers must be started before this\ncontainer. Dependencies can be specified by name or full/partial ID.\nOptional."
+        },
+        "deviceCgroupRule": {
+          "type": "array",
+          "items": {
+            "$ref": "#/types/podman:index:LinuxDeviceCgroup"
+          },
+          "description": "DeviceCgroupRule are device cgroup rules that allow containers\nto use additional types of devices."
+        },
+        "devices": {
+          "type": "array",
+          "items": {
+            "$ref": "#/types/podman:index:LinuxDevice"
+          },
+          "description": "Devices are devices that will be added to the container.\nOptional."
+        },
+        "devicesFrom": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "DevicesFrom specifies that this container will mount the device(s) from other container(s).\nOptional."
+        },
+        "dnsOption": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "DNSOptions is a set of DNS options that will be used in the\ncontainer's resolv.conf, replacing the host's DNS options which are\nused by default.\nConflicts with UseImageResolvConf.\nOptional."
+        },
+        "dnsSearch": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "DNSSearch is a set of DNS search domains that will be used in the\ncontainer's resolv.conf, replacing the host's DNS search domains\nwhich are used by default.\nConflicts with UseImageResolvConf.\nOptional."
+        },
+        "dnsServer": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "DNSServers is a set of DNS servers that will be used in the\ncontainer's resolv.conf, replacing the host's DNS Servers which are\nused by default.\nConflicts with UseImageResolvConf.\nOptional."
+        },
+        "driver": {
+          "type": "string"
+        },
+        "effectiveCaps": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "entrypoint": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Entrypoint is the container's entrypoint.\nIf not given and Image is specified, this will be populated by the\nimage's configuration.\nOptional."
+        },
+        "env": {
+          "type": "object",
+          "description": "Env is a set of environment variables that will be set in the\ncontainer.\nOptional."
+        },
+        "envHost": {
+          "type": "boolean",
+          "description": "EnvHost indicates that the host environment should be added to container\nOptional."
+        },
+        "envmerge": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "EnvMerge takes the specified environment variables from image and preprocess them before injecting them into the\ncontainer.\nOptional."
+        },
+        "execIDs": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "expose": {
+          "type": "object",
+          "description": "Expose is a number of ports that will be forwarded to the container\nif PublishExposedPorts is set.\nExpose is a map of uint16 (port number) to a string representing\nprotocol i.e map[uint16]string. Allowed protocols are \"tcp\", \"udp\", and \"sctp\", or some\ncombination of the three separated by commas.\nIf protocol is set to \"\" we will assume TCP.\nOnly available if NetNS is set to Bridge or Pasta, and\nPublishExposedPorts is set.\nOptional."
+        },
+        "gpus": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "GPUs contains GPU device identifiers for CDI resolution.\nThese will be resolved to full CDI device paths on the server side.\nOptional."
+        },
+        "graphDriver": {
+          "$ref": "#/types/podman:index:LibpodDriverData"
+        },
+        "groupEntry": {
+          "type": "string",
+          "description": "GroupEntry specifies an arbitrary string to append to the container's /etc/group file.\nOptional."
+        },
+        "groups": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Groups are a list of supplemental groups the container's user will\nbe granted access to.\nOptional."
+        },
+        "healthCheckOnFailureAction": {
+          "$ref": "#/types/podman:index:HealthCheckOnFailureAction"
+        },
+        "healthLogDestination": {
+          "type": "string",
+          "description": "HealthLogDestination defines the destination where the log is stored.\nTODO (6.0): In next major release convert it to pointer and use omitempty"
+        },
+        "healthMaxLogCount": {
+          "type": "integer",
+          "description": "HealthMaxLogCount is maximum number of attempts in the HealthCheck log file.\n('0' value means an infinite number of attempts in the log file).\nTODO (6.0): In next major release convert it to pointer and use omitempty"
+        },
+        "healthMaxLogSize": {
+          "type": "integer",
+          "description": "HealthMaxLogSize is the maximum length in characters of stored HealthCheck log\n(\"0\" value means an infinite log length).\nTODO (6.0): In next major release convert it to pointer and use omitempty"
+        },
+        "healthconfig": {
+          "$ref": "#/types/podman:index:Schema2HealthConfig"
+        },
+        "hostConfig": {
+          "$ref": "#/types/podman:index:InspectContainerHostConfig"
+        },
+        "hostDeviceList": {
+          "type": "array",
+          "items": {
+            "$ref": "#/types/podman:index:LinuxDevice"
+          },
+          "description": "HostDeviceList is used to recreate the mounted device on inherited containers"
+        },
+        "hostadd": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "HostAdd is a set of hosts which will be added to the container's\netc/hosts file.\nConflicts with UseImageHosts.\nOptional."
+        },
+        "hostname": {
+          "type": "string",
+          "description": "Hostname is the container's hostname. If not set, the hostname will\nnot be modified (if UtsNS is not private) or will be set to the\ncontainer ID (if UtsNS is private).\nConflicts with UtsNS if UtsNS is not set to private.\nOptional."
+        },
+        "hostnamePath": {
+          "type": "string"
+        },
+        "hostsPath": {
+          "type": "string"
+        },
+        "hostusers": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "HostUsers is a list of host usernames or UIDs to add to the container\netc/passwd file"
+        },
+        "httpproxy": {
+          "type": "boolean",
+          "description": "EnvHTTPProxy indicates that the http host proxy environment variables\nshould be added to container\nOptional."
+        },
+        "idmappings": {
+          "$ref": "#/types/podman:index:IDMappingOptions"
+        },
+        "image": {
+          "type": "string",
+          "description": "Image is the image the container will be based on. The image will be\nused as the container's root filesystem, and its environment vars,\nvolumes, and other configuration will be applied to the container.\nConflicts with Rootfs.\nAt least one of Image or Rootfs must be specified."
+        },
+        "imageArch": {
+          "type": "string",
+          "description": "ImageArch is the user-specified image architecture.\nUsed to select a different variant from a manifest list.\nOptional."
+        },
+        "imageDigest": {
+          "type": "string"
+        },
+        "imageName": {
+          "type": "string"
+        },
+        "imageOs": {
+          "type": "string",
+          "description": "ImageOS is the user-specified OS of the image.\nUsed to select a different variant from a manifest list.\nOptional."
+        },
+        "imageVariant": {
+          "type": "string",
+          "description": "ImageVariant is the user-specified image variant.\nUsed to select a different variant from a manifest list.\nOptional."
+        },
+        "imageVolumeMode": {
+          "type": "string",
+          "description": "ImageVolumeMode indicates how image volumes will be created.\nSupported modes are \"ignore\" (do not create), \"tmpfs\" (create as\ntmpfs), and \"anonymous\" (create as anonymous volumes).\nThe default if unset is anonymous.\nOptional."
+        },
+        "imageVolumes": {
+          "type": "array",
+          "items": {
+            "$ref": "#/types/podman:index:ImageVolume"
+          },
+          "description": "Image volumes bind-mount a container-image mount into the container.\nOptional."
+        },
+        "init": {
+          "type": "boolean",
+          "description": "Init specifies that an init binary will be mounted into the\ncontainer, and will be used as PID1.\nOptional."
+        },
+        "initContainerType": {
+          "type": "string",
+          "description": "InitContainerType describes if this container is an init container\nand if so, what type: always or once.\nOptional."
+        },
+        "initPath": {
+          "type": "string",
+          "description": "InitPath specifies the path to the init binary that will be added if\nInit is specified above. If not specified, the default set in the\nLibpod config will be used. Ignored if Init above is not set.\nOptional."
+        },
+        "intelRdt": {
+          "$ref": "#/types/podman:index:LinuxIntelRdt"
+        },
+        "ipcns": {
+          "$ref": "#/types/podman:index:Namespace"
+        },
+        "isInfra": {
+          "type": "boolean"
+        },
+        "isInitCtr": {
+          "type": "boolean"
+        },
+        "isService": {
+          "type": "boolean"
+        },
+        "kubeExitCodePropagation": {
+          "type": "string"
+        },
+        "labelNested": {
+          "type": "boolean",
+          "description": "LabelNested indicates whether or not the container is allowed to\nrun fully nested containers including SELinux labelling.\nOptional."
+        },
+        "labels": {
+          "type": "object",
+          "description": "Labels are key-value pairs that are used to add metadata to\ncontainers.\nOptional."
+        },
+        "lockNumber": {
+          "type": "integer"
+        },
+        "logConfiguration": {
+          "$ref": "#/types/podman:index:LogConfigLibpod"
+        },
+        "managePassword": {
+          "type": "boolean",
+          "description": "Passwd is a container run option that determines if we are validating users/groups before running the container"
+        },
+        "mask": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Mask is the path we want to mask in the container. This masks the paths\ngiven in addition to the default list.\nOptional"
+        },
+        "mountLabel": {
+          "type": "string"
+        },
+        "mounts": {
+          "type": "array",
+          "items": {
+            "$ref": "#/types/podman:index:SpecsGoMount"
+          },
+          "description": "Mounts are mounts that will be added to the container.\nThese will supersede Image Volumes and VolumesFrom volumes where\nthere are conflicts.\nOptional."
+        },
+        "name": {
+          "type": "string",
+          "description": "Name is the name the container will be given.\nIf no name is provided, one will be randomly generated.\nOptional."
+        },
+        "namespace": {
+          "type": "string"
+        },
+        "netns": {
+          "$ref": "#/types/podman:index:Namespace"
+        },
+        "networkOptions": {
+          "type": "object",
+          "description": "NetworkOptions are additional options for each network\nOptional."
+        },
+        "networkOrder": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "The order that networks will be configured in.\nIf not set, alphabetical order based on network name will be used.\nIf set: Must be the same length as Networks and its contents must be every key in the Networks map.\nOptional."
+        },
+        "networkSettings": {
+          "$ref": "#/types/podman:index:InspectNetworkSettings"
+        },
+        "networks": {
+          "type": "object",
+          "description": "Map of networks names or ids that the container should join.\nYou can request additional settings for each network, you can\nset network aliases, static ips, static mac address  and the\nnetwork interface name for this container on the specific network.\nIf the map is empty and the bridge network mode is set the container\nwill be joined to the default network.\nOptional."
+        },
+        "noNewPrivileges": {
+          "type": "boolean",
+          "description": "NoNewPrivileges is whether the container will set the no new\nprivileges flag on create, which disables gaining additional\nprivileges (e.g. via setuid) in the container.\nOptional."
+        },
+        "oCIConfigPath": {
+          "type": "string"
+        },
+        "oCIRuntime": {
+          "type": "string"
+        },
+        "ociRuntime": {
+          "type": "string",
+          "description": "OCIRuntime is the name of the OCI runtime that will be used to create\nthe container.\nIf not specified, the default will be used.\nOptional."
+        },
+        "oomScoreAdj": {
+          "type": "integer",
+          "description": "OOMScoreAdj adjusts the score used by the OOM killer to determine\nprocesses to kill for the container's process.\nOptional."
+        },
+        "overlayVolumes": {
+          "type": "array",
+          "items": {
+            "$ref": "#/types/podman:index:OverlayVolume"
+          },
+          "description": "Overlay volumes are named volumes that will be added to the container.\nOptional."
+        },
+        "passwdEntry": {
+          "type": "string",
+          "description": "PasswdEntry specifies an arbitrary string to append to the container's /etc/passwd file.\nOptional."
+        },
+        "path": {
+          "type": "string"
+        },
+        "personality": {
+          "$ref": "#/types/podman:index:LinuxPersonality"
+        },
+        "pidFile": {
+          "type": "string"
+        },
+        "pidns": {
+          "$ref": "#/types/podman:index:Namespace"
+        },
+        "pod": {
+          "type": "string",
+          "description": "Pod is the ID of the pod the container will join.\nOptional."
+        },
+        "portmappings": {
+          "type": "array",
+          "items": {
+            "$ref": "#/types/podman:index:PortMapping"
+          },
+          "description": "PortBindings is a set of ports to map into the container.\nOnly available if NetNS is set to bridge or pasta.\nOptional."
+        },
+        "privileged": {
+          "type": "boolean",
+          "description": "Privileged is whether the container is privileged.\nPrivileged does the following:\n- Adds all devices on the system to the container.\n- Adds all capabilities to the container.\n- Disables Seccomp, SELinux, and Apparmor confinement.\n(Though SELinux can be manually re-enabled).\nTODO: this conflicts with things.\nTODO: this does more.\nOptional."
+        },
+        "processLabel": {
+          "type": "string"
+        },
+        "procfsOpts": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "ProcOpts are the options used for the proc mount."
+        },
+        "publishImagePorts": {
+          "type": "boolean",
+          "description": "PublishExposedPorts will publish ports specified in the image to\nrandom unused ports (guaranteed to be above 1024) on the host.\nThis is based on ports set in Expose below, and any ports specified\nby the Image (if one is given).\nOnly available if NetNS is set to Bridge or Pasta.\nOptional."
+        },
+        "rLimits": {
+          "type": "array",
+          "items": {
+            "$ref": "#/types/podman:index:POSIXRlimit"
+          },
+          "description": "Rlimits are POSIX rlimits to apply to the container.\nOptional."
+        },
+        "rawImageName": {
+          "type": "string",
+          "description": "RawImageName is the user-specified and unprocessed input referring\nto a local or a remote image.\nOptional, but strongly encouraged to be set if Image is set."
+        },
+        "readOnlyFilesystem": {
+          "type": "boolean",
+          "description": "ReadOnlyFilesystem indicates that everything will be mounted\nas read-only.\nOptional."
+        },
+        "readWriteTmpfs": {
+          "type": "boolean",
+          "description": "ReadWriteTmpfs indicates that when running with a ReadOnlyFilesystem\nmount temporary file systems.\nOptional."
+        },
+        "remove": {
+          "type": "boolean",
+          "description": "Remove indicates if the container should be removed once it has been started\nand exits.\nOptional."
+        },
+        "removeImage": {
+          "type": "boolean",
+          "description": "RemoveImage indicates that the container should remove the image it\nwas created from after it exits.\nOnly allowed if Remove is set to true and Image, not Rootfs, is in\nuse.\nOptional."
+        },
+        "resolvConfPath": {
+          "type": "string"
+        },
+        "resourceLimits": {
+          "$ref": "#/types/podman:index:LinuxResources"
+        },
+        "restartCount": {
+          "type": "integer"
+        },
+        "restartPolicy": {
+          "type": "string",
+          "description": "RestartPolicy is the container's restart policy - an action which\nwill be taken when the container exits.\nIf not given, the default policy, which does nothing, will be used.\nOptional."
+        },
+        "restartTries": {
+          "type": "integer",
+          "description": "RestartRetries is the number of attempts that will be made to restart\nthe container.\nOnly available when RestartPolicy is set to \"on-failure\".\nOptional."
+        },
+        "rootfs": {
+          "type": "string",
+          "description": "Rootfs is the path to a directory that will be used as the\ncontainer's root filesystem. No modification will be made to the\ndirectory, it will be directly mounted into the container as root.\nConflicts with Image.\nAt least one of Image or Rootfs must be specified."
+        },
+        "rootfsMapping": {
+          "type": "string",
+          "description": "RootfsMapping specifies if there are UID/GID mappings to apply to the rootfs.\nOptional."
+        },
+        "rootfsOverlay": {
+          "type": "boolean",
+          "description": "RootfsOverlay tells if rootfs is actually an overlay on top of base path.\nOptional."
+        },
+        "rootfsPropagation": {
+          "type": "string",
+          "description": "RootfsPropagation is the rootfs propagation mode for the container.\nIf not set, the default of rslave will be used.\nOptional."
+        },
+        "sdnotifyMode": {
+          "type": "string",
+          "description": "Determine how to handle the NOTIFY_SOCKET - do we participate or pass it through\n\"container\" - let the OCI runtime deal with it, advertise conmon's MAINPID\n\"conmon-only\" - advertise conmon's MAINPID, send READY when started, don't pass to OCI\n\"ignore\" - unset NOTIFY_SOCKET\nOptional."
+        },
+        "seccompPolicy": {
+          "type": "string",
+          "description": "SeccompPolicy determines which seccomp profile gets applied\nthe container. valid values: empty,default,image"
+        },
+        "seccompProfile": {
+          "type": "string",
+          "description": "SeccompProfile is the JSON content of the container's Seccomp\nprofile.\nConflicts with SeccompProfilePath.\nOptional."
+        },
+        "seccompProfilePath": {
+          "type": "string",
+          "description": "SeccompProfilePath is the path to a JSON file containing the\ncontainer's Seccomp profile.\nIf not specified, no Seccomp profile will be used.\nConflicts with SeccompProfile.\nOptional."
+        },
+        "secretEnv": {
+          "type": "object",
+          "description": "EnvSecrets are secrets that will be set as environment variables\nOptional."
+        },
+        "secrets": {
+          "type": "array",
+          "items": {
+            "$ref": "#/types/podman:index:SpecgenSecret"
+          },
+          "description": "Secrets are the secrets that will be added to the container\nOptional."
+        },
+        "selinuxOpts": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "SelinuxProcessLabel is the process label the container will use.\nIf SELinux is enabled and this is not specified, a label will be\nautomatically generated if not specified.\nOptional."
+        },
+        "shmSize": {
+          "type": "integer",
+          "description": "ShmSize is the size of the tmpfs to mount in at /dev/shm, in bytes.\nConflicts with ShmSize if IpcNS is not private.\nOptional."
+        },
+        "shmSizeSystemd": {
+          "type": "integer",
+          "description": "ShmSizeSystemd is the size of systemd-specific tmpfs mounts\nspecifically /run, /run/lock, /var/log/journal and /tmp.\nOptional"
+        },
+        "sizeRootFs": {
+          "type": "integer"
+        },
+        "sizeRw": {
+          "type": "integer"
+        },
+        "startupHealthConfig": {
+          "$ref": "#/types/podman:index:StartupHealthCheck"
+        },
+        "state": {
+          "$ref": "#/types/podman:index:InspectContainerState"
+        },
+        "staticDir": {
+          "type": "string"
+        },
+        "stdin": {
+          "type": "boolean",
+          "description": "Stdin is whether the container will keep its STDIN open.\nOptional."
+        },
+        "stopSignal": {
+          "$ref": "#/types/podman:index:Signal"
+        },
+        "stopTimeout": {
+          "type": "integer",
+          "description": "StopTimeout is a timeout between the container's stop signal being\nsent and SIGKILL being sent.\nIf not provided, the default will be used.\nIf 0 is used, stop signal will not be sent, and SIGKILL will be sent\ninstead.\nOptional."
+        },
+        "storageOpts": {
+          "type": "object",
+          "description": "StorageOpts is the container's storage options\nOptional."
+        },
+        "sysctl": {
+          "type": "object",
+          "description": "Sysctl sets kernel parameters for the container"
+        },
+        "systemd": {
+          "type": "string",
+          "description": "Systemd is whether the container will be started in systemd mode.\nValid options are \"true\", \"false\", and \"always\".\n\"true\" enables this mode only if the binary run in the container is\nsbin/init or systemd. \"always\" unconditionally enables systemd mode.\n\"false\" unconditionally disables systemd mode.\nIf enabled, mounts and stop signal will be modified.\nIf set to \"always\" or set to \"true\" and conditionally triggered,\nconflicts with StopSignal.\nIf not specified, \"false\" will be assumed.\nOptional."
+        },
+        "terminal": {
+          "type": "boolean",
+          "description": "Terminal is whether the container will create a PTY.\nOptional."
+        },
+        "throttleReadBpsDevice": {
+          "type": "object",
+          "description": "IO read rate limit per cgroup per device, bytes per second"
+        },
+        "throttleReadIOPSDevice": {
+          "type": "object",
+          "description": "IO read rate limit per cgroup per device, IO per second"
+        },
+        "throttleWriteBpsDevice": {
+          "type": "object",
+          "description": "IO write rate limit per cgroup per device, bytes per second"
+        },
+        "throttleWriteIOPSDevice": {
+          "type": "object",
+          "description": "IO write rate limit per cgroup per device, IO per second"
+        },
+        "timeout": {
+          "type": "integer",
+          "description": "Timeout is a maximum time in seconds the container will run before\nmain process is sent SIGKILL.\nIf 0 is used, signal will not be sent. Container can run indefinitely\nif they do not stop after the default termination signal.\nOptional."
+        },
+        "timezone": {
+          "type": "string",
+          "description": "Timezone is the timezone inside the container.\nLocal means it has the same timezone as the host machine\nOptional."
+        },
+        "umask": {
+          "type": "string",
+          "description": "Umask is the umask the init process of the container will be run with."
+        },
+        "unified": {
+          "type": "object",
+          "description": "CgroupConf are key-value options passed into the container runtime\nthat are used to configure cgroup v2.\nOptional."
+        },
+        "unmask": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Unmask a path in the container. Some paths are masked by default,\npreventing them from being accessed within the container; this undoes\nthat masking. If ALL is passed, all paths will be unmasked.\nOptional."
+        },
+        "unsetenv": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "UnsetEnv unsets the specified default environment variables from the image or from built-in or containers.conf\nOptional."
+        },
+        "unsetenvall": {
+          "type": "boolean",
+          "description": "UnsetEnvAll unsetall default environment variables from the image or from built-in or containers.conf\nUnsetEnvAll unsets all default environment variables from the image or from built-in\nOptional."
+        },
+        "useImageHostname": {
+          "type": "boolean",
+          "description": "UseImageHostname indicates that /etc/hostname should not be managed by\nPodman, and instead sourced from the image.\nOptional."
+        },
+        "useImageHosts": {
+          "type": "boolean",
+          "description": "UseImageHosts indicates that /etc/hosts should not be managed by\nPodman, and instead sourced from the image.\nConflicts with HostAdd.\nOptional."
+        },
+        "useImageResolveConf": {
+          "type": "boolean",
+          "description": "UseImageResolvConf indicates that resolv.conf should not be managed\nby Podman, but instead sourced from the image.\nConflicts with DNSServer, DNSSearch, DNSOption.\nOptional."
+        },
+        "user": {
+          "type": "string",
+          "description": "User is the user the container will be run as.\nCan be given as a UID or a username; if a username, it will be\nresolved within the container, using the container's /etc/passwd.\nIf unset, the container will be run as root.\nOptional."
+        },
+        "userns": {
+          "$ref": "#/types/podman:index:Namespace"
+        },
+        "utsns": {
+          "$ref": "#/types/podman:index:Namespace"
+        },
+        "volatile": {
+          "type": "boolean",
+          "description": "Volatile specifies whether the container storage can be optimized\nat the cost of not syncing all the dirty files in memory.\nOptional."
+        },
+        "volumes": {
+          "type": "array",
+          "items": {
+            "$ref": "#/types/podman:index:NamedVolume"
+          },
+          "description": "Volumes are named volumes that will be added to the container.\nThese will supersede Image Volumes and VolumesFrom volumes where\nthere are conflicts.\nOptional."
+        },
+        "volumesFrom": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "VolumesFrom is a set of containers whose volumes will be added to\nthis container. The name or ID of the container must be provided, and\nmay optionally be followed by a : and then one or more\ncomma-separated options. Valid options are 'ro', 'rw', and 'z'.\nOptions will be used for all volumes sourced from the container.\nOptional."
+        },
+        "weightDevice": {
+          "type": "object",
+          "description": "Weight per cgroup per device, can override BlkioWeight"
+        },
+        "workDir": {
+          "type": "string",
+          "description": "WorkDir is the container's working directory.\nIf unset, the default, /, will be used.\nOptional."
+        }
+      },
+      "inputProperties": {
+        "annotations": {
+          "type": "object",
+          "description": "Annotations are key-value options passed into the container runtime\nthat can be used to trigger special behavior.\nOptional."
+        },
+        "apparmorProfile": {
+          "type": "string",
+          "description": "ApparmorProfile is the name of the Apparmor profile the container\nwill use.\nOptional."
+        },
+        "artifactVolumes": {
+          "type": "array",
+          "items": {
+            "$ref": "#/types/podman:index:ArtifactVolume"
+          },
+          "description": "ArtifactVolumes volumes based on an existing artifact."
+        },
+        "baseHostsFile": {
+          "type": "string",
+          "description": "BaseHostsFile is the base file to create the `/etc/hosts` file inside the container.\nThis must either be an absolute path to a file on the host system, or one of the\nspecial flags `image` or `none`.\nIf it is empty it defaults to the base_hosts_file configuration in containers.conf.\nOptional."
+        },
+        "capAdd": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "CapAdd are capabilities which will be added to the container.\nConflicts with Privileged.\nOptional."
+        },
+        "capDrop": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "CapDrop are capabilities which will be removed from the container.\nConflicts with Privileged.\nOptional."
+        },
+        "cgroupParent": {
+          "type": "string",
+          "description": "CgroupParent is the container's Cgroup parent.\nIf not set, the default for the current cgroup driver will be used.\nOptional."
+        },
+        "cgroupns": {
+          "$ref": "#/types/podman:index:Namespace"
+        },
+        "cgroupsMode": {
+          "type": "string",
+          "description": "CgroupsMode sets a policy for how cgroups will be created for the\ncontainer, including the ability to disable creation entirely.\nOptional."
+        },
+        "chrootDirectories": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "ChrootDirs is an additional set of directories that need to be\ntreated as root directories. Standard bind mounts will be mounted\ninto paths relative to these directories.\nOptional."
+        },
+        "command": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Command is the container's command.\nIf not given and Image is specified, this will be populated by the\nimage's configuration.\nOptional."
+        },
+        "conmonPidFile": {
+          "type": "string",
+          "description": "ConmonPidFile is a path at which a PID file for Conmon will be\nplaced.\nIf not given, a default location will be used.\nOptional."
+        },
+        "containerCreateCommand": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "ContainerCreateCommand is the command that was used to create this\ncontainer.\nThis will be shown in the output of Inspect() on the container, and\nmay also be used by some tools that wish to recreate the container\n(e.g. `podman generate systemd --new`).\nOptional."
+        },
+        "createWorkingDir": {
+          "type": "boolean",
+          "description": "Create the working directory if it doesn't exist.\nIf unset, it doesn't create it.\nOptional."
+        },
+        "dependencyContainers": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "DependencyContainers is an array of containers this container\ndepends on. Dependency containers must be started before this\ncontainer. Dependencies can be specified by name or full/partial ID.\nOptional."
+        },
+        "deviceCgroupRule": {
+          "type": "array",
+          "items": {
+            "$ref": "#/types/podman:index:LinuxDeviceCgroup"
+          },
+          "description": "DeviceCgroupRule are device cgroup rules that allow containers\nto use additional types of devices."
+        },
+        "devices": {
+          "type": "array",
+          "items": {
+            "$ref": "#/types/podman:index:LinuxDevice"
+          },
+          "description": "Devices are devices that will be added to the container.\nOptional."
+        },
+        "devicesFrom": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "DevicesFrom specifies that this container will mount the device(s) from other container(s).\nOptional."
+        },
+        "dnsOption": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "DNSOptions is a set of DNS options that will be used in the\ncontainer's resolv.conf, replacing the host's DNS options which are\nused by default.\nConflicts with UseImageResolvConf.\nOptional."
+        },
+        "dnsSearch": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "DNSSearch is a set of DNS search domains that will be used in the\ncontainer's resolv.conf, replacing the host's DNS search domains\nwhich are used by default.\nConflicts with UseImageResolvConf.\nOptional."
+        },
+        "dnsServer": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "DNSServers is a set of DNS servers that will be used in the\ncontainer's resolv.conf, replacing the host's DNS Servers which are\nused by default.\nConflicts with UseImageResolvConf.\nOptional."
+        },
+        "entrypoint": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Entrypoint is the container's entrypoint.\nIf not given and Image is specified, this will be populated by the\nimage's configuration.\nOptional."
+        },
+        "env": {
+          "type": "object",
+          "description": "Env is a set of environment variables that will be set in the\ncontainer.\nOptional."
+        },
+        "envHost": {
+          "type": "boolean",
+          "description": "EnvHost indicates that the host environment should be added to container\nOptional."
+        },
+        "envmerge": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "EnvMerge takes the specified environment variables from image and preprocess them before injecting them into the\ncontainer.\nOptional."
+        },
+        "expose": {
+          "type": "object",
+          "description": "Expose is a number of ports that will be forwarded to the container\nif PublishExposedPorts is set.\nExpose is a map of uint16 (port number) to a string representing\nprotocol i.e map[uint16]string. Allowed protocols are \"tcp\", \"udp\", and \"sctp\", or some\ncombination of the three separated by commas.\nIf protocol is set to \"\" we will assume TCP.\nOnly available if NetNS is set to Bridge or Pasta, and\nPublishExposedPorts is set.\nOptional."
+        },
+        "gpus": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "GPUs contains GPU device identifiers for CDI resolution.\nThese will be resolved to full CDI device paths on the server side.\nOptional."
+        },
+        "groupEntry": {
+          "type": "string",
+          "description": "GroupEntry specifies an arbitrary string to append to the container's /etc/group file.\nOptional."
+        },
+        "groups": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Groups are a list of supplemental groups the container's user will\nbe granted access to.\nOptional."
+        },
+        "healthCheckOnFailureAction": {
+          "$ref": "#/types/podman:index:HealthCheckOnFailureAction"
+        },
+        "healthLogDestination": {
+          "type": "string",
+          "description": "HealthLogDestination defines the destination where the log is stored.\nTODO (6.0): In next major release convert it to pointer and use omitempty"
+        },
+        "healthMaxLogCount": {
+          "type": "integer",
+          "description": "HealthMaxLogCount is maximum number of attempts in the HealthCheck log file.\n('0' value means an infinite number of attempts in the log file).\nTODO (6.0): In next major release convert it to pointer and use omitempty"
+        },
+        "healthMaxLogSize": {
+          "type": "integer",
+          "description": "HealthMaxLogSize is the maximum length in characters of stored HealthCheck log\n(\"0\" value means an infinite log length).\nTODO (6.0): In next major release convert it to pointer and use omitempty"
+        },
+        "healthconfig": {
+          "$ref": "#/types/podman:index:Schema2HealthConfig"
+        },
+        "hostDeviceList": {
+          "type": "array",
+          "items": {
+            "$ref": "#/types/podman:index:LinuxDevice"
+          },
+          "description": "HostDeviceList is used to recreate the mounted device on inherited containers"
+        },
+        "hostadd": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "HostAdd is a set of hosts which will be added to the container's\netc/hosts file.\nConflicts with UseImageHosts.\nOptional."
+        },
+        "hostname": {
+          "type": "string",
+          "description": "Hostname is the container's hostname. If not set, the hostname will\nnot be modified (if UtsNS is not private) or will be set to the\ncontainer ID (if UtsNS is private).\nConflicts with UtsNS if UtsNS is not set to private.\nOptional."
+        },
+        "hostusers": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "HostUsers is a list of host usernames or UIDs to add to the container\netc/passwd file"
+        },
+        "httpproxy": {
+          "type": "boolean",
+          "description": "EnvHTTPProxy indicates that the http host proxy environment variables\nshould be added to container\nOptional."
+        },
+        "idmappings": {
+          "$ref": "#/types/podman:index:IDMappingOptions"
+        },
+        "image": {
+          "type": "string",
+          "description": "Image is the image the container will be based on. The image will be\nused as the container's root filesystem, and its environment vars,\nvolumes, and other configuration will be applied to the container.\nConflicts with Rootfs.\nAt least one of Image or Rootfs must be specified."
+        },
+        "imageArch": {
+          "type": "string",
+          "description": "ImageArch is the user-specified image architecture.\nUsed to select a different variant from a manifest list.\nOptional."
+        },
+        "imageOs": {
+          "type": "string",
+          "description": "ImageOS is the user-specified OS of the image.\nUsed to select a different variant from a manifest list.\nOptional."
+        },
+        "imageVariant": {
+          "type": "string",
+          "description": "ImageVariant is the user-specified image variant.\nUsed to select a different variant from a manifest list.\nOptional."
+        },
+        "imageVolumeMode": {
+          "type": "string",
+          "description": "ImageVolumeMode indicates how image volumes will be created.\nSupported modes are \"ignore\" (do not create), \"tmpfs\" (create as\ntmpfs), and \"anonymous\" (create as anonymous volumes).\nThe default if unset is anonymous.\nOptional."
+        },
+        "imageVolumes": {
+          "type": "array",
+          "items": {
+            "$ref": "#/types/podman:index:ImageVolume"
+          },
+          "description": "Image volumes bind-mount a container-image mount into the container.\nOptional."
+        },
+        "init": {
+          "type": "boolean",
+          "description": "Init specifies that an init binary will be mounted into the\ncontainer, and will be used as PID1.\nOptional."
+        },
+        "initContainerType": {
+          "type": "string",
+          "description": "InitContainerType describes if this container is an init container\nand if so, what type: always or once.\nOptional."
+        },
+        "initPath": {
+          "type": "string",
+          "description": "InitPath specifies the path to the init binary that will be added if\nInit is specified above. If not specified, the default set in the\nLibpod config will be used. Ignored if Init above is not set.\nOptional."
+        },
+        "intelRdt": {
+          "$ref": "#/types/podman:index:LinuxIntelRdt"
+        },
+        "ipcns": {
+          "$ref": "#/types/podman:index:Namespace"
+        },
+        "labelNested": {
+          "type": "boolean",
+          "description": "LabelNested indicates whether or not the container is allowed to\nrun fully nested containers including SELinux labelling.\nOptional."
+        },
+        "labels": {
+          "type": "object",
+          "description": "Labels are key-value pairs that are used to add metadata to\ncontainers.\nOptional."
+        },
+        "logConfiguration": {
+          "$ref": "#/types/podman:index:LogConfigLibpod"
+        },
+        "managePassword": {
+          "type": "boolean",
+          "description": "Passwd is a container run option that determines if we are validating users/groups before running the container"
+        },
+        "mask": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Mask is the path we want to mask in the container. This masks the paths\ngiven in addition to the default list.\nOptional"
+        },
+        "mounts": {
+          "type": "array",
+          "items": {
+            "$ref": "#/types/podman:index:SpecsGoMount"
+          },
+          "description": "Mounts are mounts that will be added to the container.\nThese will supersede Image Volumes and VolumesFrom volumes where\nthere are conflicts.\nOptional."
+        },
+        "name": {
+          "type": "string",
+          "description": "Name is the name the container will be given.\nIf no name is provided, one will be randomly generated.\nOptional."
+        },
+        "netns": {
+          "$ref": "#/types/podman:index:Namespace"
+        },
+        "networkOptions": {
+          "type": "object",
+          "description": "NetworkOptions are additional options for each network\nOptional."
+        },
+        "networkOrder": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "The order that networks will be configured in.\nIf not set, alphabetical order based on network name will be used.\nIf set: Must be the same length as Networks and its contents must be every key in the Networks map.\nOptional."
+        },
+        "networks": {
+          "type": "object",
+          "description": "Map of networks names or ids that the container should join.\nYou can request additional settings for each network, you can\nset network aliases, static ips, static mac address  and the\nnetwork interface name for this container on the specific network.\nIf the map is empty and the bridge network mode is set the container\nwill be joined to the default network.\nOptional."
+        },
+        "noNewPrivileges": {
+          "type": "boolean",
+          "description": "NoNewPrivileges is whether the container will set the no new\nprivileges flag on create, which disables gaining additional\nprivileges (e.g. via setuid) in the container.\nOptional."
+        },
+        "ociRuntime": {
+          "type": "string",
+          "description": "OCIRuntime is the name of the OCI runtime that will be used to create\nthe container.\nIf not specified, the default will be used.\nOptional."
+        },
+        "oomScoreAdj": {
+          "type": "integer",
+          "description": "OOMScoreAdj adjusts the score used by the OOM killer to determine\nprocesses to kill for the container's process.\nOptional."
+        },
+        "overlayVolumes": {
+          "type": "array",
+          "items": {
+            "$ref": "#/types/podman:index:OverlayVolume"
+          },
+          "description": "Overlay volumes are named volumes that will be added to the container.\nOptional."
+        },
+        "passwdEntry": {
+          "type": "string",
+          "description": "PasswdEntry specifies an arbitrary string to append to the container's /etc/passwd file.\nOptional."
+        },
+        "personality": {
+          "$ref": "#/types/podman:index:LinuxPersonality"
+        },
+        "pidns": {
+          "$ref": "#/types/podman:index:Namespace"
+        },
+        "pod": {
+          "type": "string",
+          "description": "Pod is the ID of the pod the container will join.\nOptional."
+        },
+        "portmappings": {
+          "type": "array",
+          "items": {
+            "$ref": "#/types/podman:index:PortMapping"
+          },
+          "description": "PortBindings is a set of ports to map into the container.\nOnly available if NetNS is set to bridge or pasta.\nOptional."
+        },
+        "privileged": {
+          "type": "boolean",
+          "description": "Privileged is whether the container is privileged.\nPrivileged does the following:\n- Adds all devices on the system to the container.\n- Adds all capabilities to the container.\n- Disables Seccomp, SELinux, and Apparmor confinement.\n(Though SELinux can be manually re-enabled).\nTODO: this conflicts with things.\nTODO: this does more.\nOptional."
+        },
+        "procfsOpts": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "ProcOpts are the options used for the proc mount."
+        },
+        "publishImagePorts": {
+          "type": "boolean",
+          "description": "PublishExposedPorts will publish ports specified in the image to\nrandom unused ports (guaranteed to be above 1024) on the host.\nThis is based on ports set in Expose below, and any ports specified\nby the Image (if one is given).\nOnly available if NetNS is set to Bridge or Pasta.\nOptional."
+        },
+        "rLimits": {
+          "type": "array",
+          "items": {
+            "$ref": "#/types/podman:index:POSIXRlimit"
+          },
+          "description": "Rlimits are POSIX rlimits to apply to the container.\nOptional."
+        },
+        "rawImageName": {
+          "type": "string",
+          "description": "RawImageName is the user-specified and unprocessed input referring\nto a local or a remote image.\nOptional, but strongly encouraged to be set if Image is set."
+        },
+        "readOnlyFilesystem": {
+          "type": "boolean",
+          "description": "ReadOnlyFilesystem indicates that everything will be mounted\nas read-only.\nOptional."
+        },
+        "readWriteTmpfs": {
+          "type": "boolean",
+          "description": "ReadWriteTmpfs indicates that when running with a ReadOnlyFilesystem\nmount temporary file systems.\nOptional."
+        },
+        "remove": {
+          "type": "boolean",
+          "description": "Remove indicates if the container should be removed once it has been started\nand exits.\nOptional."
+        },
+        "removeImage": {
+          "type": "boolean",
+          "description": "RemoveImage indicates that the container should remove the image it\nwas created from after it exits.\nOnly allowed if Remove is set to true and Image, not Rootfs, is in\nuse.\nOptional."
+        },
+        "resourceLimits": {
+          "$ref": "#/types/podman:index:LinuxResources"
+        },
+        "restartPolicy": {
+          "type": "string",
+          "description": "RestartPolicy is the container's restart policy - an action which\nwill be taken when the container exits.\nIf not given, the default policy, which does nothing, will be used.\nOptional."
+        },
+        "restartTries": {
+          "type": "integer",
+          "description": "RestartRetries is the number of attempts that will be made to restart\nthe container.\nOnly available when RestartPolicy is set to \"on-failure\".\nOptional."
+        },
+        "rootfs": {
+          "type": "string",
+          "description": "Rootfs is the path to a directory that will be used as the\ncontainer's root filesystem. No modification will be made to the\ndirectory, it will be directly mounted into the container as root.\nConflicts with Image.\nAt least one of Image or Rootfs must be specified."
+        },
+        "rootfsMapping": {
+          "type": "string",
+          "description": "RootfsMapping specifies if there are UID/GID mappings to apply to the rootfs.\nOptional."
+        },
+        "rootfsOverlay": {
+          "type": "boolean",
+          "description": "RootfsOverlay tells if rootfs is actually an overlay on top of base path.\nOptional."
+        },
+        "rootfsPropagation": {
+          "type": "string",
+          "description": "RootfsPropagation is the rootfs propagation mode for the container.\nIf not set, the default of rslave will be used.\nOptional."
+        },
+        "sdnotifyMode": {
+          "type": "string",
+          "description": "Determine how to handle the NOTIFY_SOCKET - do we participate or pass it through\n\"container\" - let the OCI runtime deal with it, advertise conmon's MAINPID\n\"conmon-only\" - advertise conmon's MAINPID, send READY when started, don't pass to OCI\n\"ignore\" - unset NOTIFY_SOCKET\nOptional."
+        },
+        "seccompPolicy": {
+          "type": "string",
+          "description": "SeccompPolicy determines which seccomp profile gets applied\nthe container. valid values: empty,default,image"
+        },
+        "seccompProfile": {
+          "type": "string",
+          "description": "SeccompProfile is the JSON content of the container's Seccomp\nprofile.\nConflicts with SeccompProfilePath.\nOptional."
+        },
+        "seccompProfilePath": {
+          "type": "string",
+          "description": "SeccompProfilePath is the path to a JSON file containing the\ncontainer's Seccomp profile.\nIf not specified, no Seccomp profile will be used.\nConflicts with SeccompProfile.\nOptional."
+        },
+        "secretEnv": {
+          "type": "object",
+          "description": "EnvSecrets are secrets that will be set as environment variables\nOptional."
+        },
+        "secrets": {
+          "type": "array",
+          "items": {
+            "$ref": "#/types/podman:index:SpecgenSecret"
+          },
+          "description": "Secrets are the secrets that will be added to the container\nOptional."
+        },
+        "selinuxOpts": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "SelinuxProcessLabel is the process label the container will use.\nIf SELinux is enabled and this is not specified, a label will be\nautomatically generated if not specified.\nOptional."
+        },
+        "shmSize": {
+          "type": "integer",
+          "description": "ShmSize is the size of the tmpfs to mount in at /dev/shm, in bytes.\nConflicts with ShmSize if IpcNS is not private.\nOptional."
+        },
+        "shmSizeSystemd": {
+          "type": "integer",
+          "description": "ShmSizeSystemd is the size of systemd-specific tmpfs mounts\nspecifically /run, /run/lock, /var/log/journal and /tmp.\nOptional"
+        },
+        "startupHealthConfig": {
+          "$ref": "#/types/podman:index:StartupHealthCheck"
+        },
+        "stdin": {
+          "type": "boolean",
+          "description": "Stdin is whether the container will keep its STDIN open.\nOptional."
+        },
+        "stopSignal": {
+          "$ref": "#/types/podman:index:Signal"
+        },
+        "stopTimeout": {
+          "type": "integer",
+          "description": "StopTimeout is a timeout between the container's stop signal being\nsent and SIGKILL being sent.\nIf not provided, the default will be used.\nIf 0 is used, stop signal will not be sent, and SIGKILL will be sent\ninstead.\nOptional."
+        },
+        "storageOpts": {
+          "type": "object",
+          "description": "StorageOpts is the container's storage options\nOptional."
+        },
+        "sysctl": {
+          "type": "object",
+          "description": "Sysctl sets kernel parameters for the container"
+        },
+        "systemd": {
+          "type": "string",
+          "description": "Systemd is whether the container will be started in systemd mode.\nValid options are \"true\", \"false\", and \"always\".\n\"true\" enables this mode only if the binary run in the container is\nsbin/init or systemd. \"always\" unconditionally enables systemd mode.\n\"false\" unconditionally disables systemd mode.\nIf enabled, mounts and stop signal will be modified.\nIf set to \"always\" or set to \"true\" and conditionally triggered,\nconflicts with StopSignal.\nIf not specified, \"false\" will be assumed.\nOptional."
+        },
+        "terminal": {
+          "type": "boolean",
+          "description": "Terminal is whether the container will create a PTY.\nOptional."
+        },
+        "throttleReadBpsDevice": {
+          "type": "object",
+          "description": "IO read rate limit per cgroup per device, bytes per second"
+        },
+        "throttleReadIOPSDevice": {
+          "type": "object",
+          "description": "IO read rate limit per cgroup per device, IO per second"
+        },
+        "throttleWriteBpsDevice": {
+          "type": "object",
+          "description": "IO write rate limit per cgroup per device, bytes per second"
+        },
+        "throttleWriteIOPSDevice": {
+          "type": "object",
+          "description": "IO write rate limit per cgroup per device, IO per second"
+        },
+        "timeout": {
+          "type": "integer",
+          "description": "Timeout is a maximum time in seconds the container will run before\nmain process is sent SIGKILL.\nIf 0 is used, signal will not be sent. Container can run indefinitely\nif they do not stop after the default termination signal.\nOptional."
+        },
+        "timezone": {
+          "type": "string",
+          "description": "Timezone is the timezone inside the container.\nLocal means it has the same timezone as the host machine\nOptional."
+        },
+        "umask": {
+          "type": "string",
+          "description": "Umask is the umask the init process of the container will be run with."
+        },
+        "unified": {
+          "type": "object",
+          "description": "CgroupConf are key-value options passed into the container runtime\nthat are used to configure cgroup v2.\nOptional."
+        },
+        "unmask": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Unmask a path in the container. Some paths are masked by default,\npreventing them from being accessed within the container; this undoes\nthat masking. If ALL is passed, all paths will be unmasked.\nOptional."
+        },
+        "unsetenv": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "UnsetEnv unsets the specified default environment variables from the image or from built-in or containers.conf\nOptional."
+        },
+        "unsetenvall": {
+          "type": "boolean",
+          "description": "UnsetEnvAll unsetall default environment variables from the image or from built-in or containers.conf\nUnsetEnvAll unsets all default environment variables from the image or from built-in\nOptional."
+        },
+        "useImageHostname": {
+          "type": "boolean",
+          "description": "UseImageHostname indicates that /etc/hostname should not be managed by\nPodman, and instead sourced from the image.\nOptional."
+        },
+        "useImageHosts": {
+          "type": "boolean",
+          "description": "UseImageHosts indicates that /etc/hosts should not be managed by\nPodman, and instead sourced from the image.\nConflicts with HostAdd.\nOptional."
+        },
+        "useImageResolveConf": {
+          "type": "boolean",
+          "description": "UseImageResolvConf indicates that resolv.conf should not be managed\nby Podman, but instead sourced from the image.\nConflicts with DNSServer, DNSSearch, DNSOption.\nOptional."
+        },
+        "user": {
+          "type": "string",
+          "description": "User is the user the container will be run as.\nCan be given as a UID or a username; if a username, it will be\nresolved within the container, using the container's /etc/passwd.\nIf unset, the container will be run as root.\nOptional."
+        },
+        "userns": {
+          "$ref": "#/types/podman:index:Namespace"
+        },
+        "utsns": {
+          "$ref": "#/types/podman:index:Namespace"
+        },
+        "volatile": {
+          "type": "boolean",
+          "description": "Volatile specifies whether the container storage can be optimized\nat the cost of not syncing all the dirty files in memory.\nOptional."
+        },
+        "volumes": {
+          "type": "array",
+          "items": {
+            "$ref": "#/types/podman:index:NamedVolume"
+          },
+          "description": "Volumes are named volumes that will be added to the container.\nThese will supersede Image Volumes and VolumesFrom volumes where\nthere are conflicts.\nOptional."
+        },
+        "volumesFrom": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "VolumesFrom is a set of containers whose volumes will be added to\nthis container. The name or ID of the container must be provided, and\nmay optionally be followed by a : and then one or more\ncomma-separated options. Valid options are 'ro', 'rw', and 'z'.\nOptions will be used for all volumes sourced from the container.\nOptional."
+        },
+        "weightDevice": {
+          "type": "object",
+          "description": "Weight per cgroup per device, can override BlkioWeight"
+        },
+        "workDir": {
+          "type": "string",
+          "description": "WorkDir is the container's working directory.\nIf unset, the default, /, will be used.\nOptional."
+        }
+      }
+    },
+    "podman:images:Image": {
+      "properties": {
+        "allTags": {
+          "type": "boolean",
+          "description": "Pull all tagged images in the repository."
+        },
+        "annotations": {
+          "type": "object"
+        },
+        "arch": {
+          "type": "string",
+          "description": "Pull image for the specified architecture."
+        },
+        "architecture": {
+          "type": "string"
+        },
+        "author": {
+          "type": "string"
+        },
+        "comment": {
+          "type": "string"
+        },
+        "compatMode": {
+          "type": "boolean",
+          "description": "Return the same JSON payload as the Docker-compat endpoint. Cannot be used with 'pullProgress' or 'quiet'."
+        },
+        "config": {
+          "$ref": "#/types/podman:index:ImageConfig"
+        },
+        "created": {
+          "type": "string"
+        },
+        "digest": {
+          "$ref": "#/types/podman:index:Digest"
+        },
+        "graphDriver": {
+          "$ref": "#/types/podman:index:LibpodDriverData"
+        },
+        "healthcheck": {
+          "$ref": "#/types/podman:index:Schema2HealthConfig"
+        },
+        "history": {
+          "type": "array",
+          "items": {
+            "$ref": "#/types/podman:index:History"
+          }
+        },
+        "labels": {
+          "type": "object"
+        },
+        "manifestType": {
+          "type": "string"
+        },
+        "namesHistory": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "oS": {
+          "type": "string",
+          "description": "Pull image for the specified operating system."
+        },
+        "os": {
+          "type": "string"
+        },
+        "parent": {
+          "type": "string"
+        },
+        "policy": {
+          "type": "string",
+          "description": "Pull policy, \"always\" (default), \"missing\", \"newer\", \"never\"."
+        },
+        "pullProgress": {
+          "type": "boolean",
+          "description": "Send reports about the progress of the pull. Cannot be used with 'compatMode' or 'quiet'."
+        },
+        "quiet": {
+          "type": "boolean",
+          "description": "Silence extra stream data on pull. Cannot be used with 'compatMode' or 'pullProgress'."
+        },
+        "reference": {
+          "type": "string",
+          "description": "Mandatory reference to the image (e.g., quay.io/image/name:tag)"
+        },
+        "repoDigests": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "repoTags": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "rootFS": {
+          "$ref": "#/types/podman:index:InspectRootFS"
+        },
+        "size": {
+          "type": "integer"
+        },
+        "tlsVerify": {
+          "type": "boolean",
+          "description": "Require TLS verification."
+        },
+        "user": {
+          "type": "string"
+        },
+        "variant": {
+          "type": "string",
+          "description": "Pull image for the specified variant."
+        },
+        "version": {
+          "type": "string"
+        },
+        "virtualSize": {
+          "type": "integer"
+        }
+      },
+      "inputProperties": {
+        "allTags": {
+          "type": "boolean",
+          "description": "Pull all tagged images in the repository."
+        },
+        "arch": {
+          "type": "string",
+          "description": "Pull image for the specified architecture."
+        },
+        "compatMode": {
+          "type": "boolean",
+          "description": "Return the same JSON payload as the Docker-compat endpoint. Cannot be used with 'pullProgress' or 'quiet'."
+        },
+        "oS": {
+          "type": "string",
+          "description": "Pull image for the specified operating system."
+        },
+        "policy": {
+          "type": "string",
+          "description": "Pull policy, \"always\" (default), \"missing\", \"newer\", \"never\"."
+        },
+        "pullProgress": {
+          "type": "boolean",
+          "description": "Send reports about the progress of the pull. Cannot be used with 'compatMode' or 'quiet'."
+        },
+        "quiet": {
+          "type": "boolean",
+          "description": "Silence extra stream data on pull. Cannot be used with 'compatMode' or 'pullProgress'."
+        },
+        "reference": {
+          "type": "string",
+          "description": "Mandatory reference to the image (e.g., quay.io/image/name:tag)"
+        },
+        "tlsVerify": {
+          "type": "boolean",
+          "description": "Require TLS verification."
+        },
+        "variant": {
+          "type": "string",
+          "description": "Pull image for the specified variant."
+        }
+      }
+    },
+    "podman:networks:Network": {
+      "properties": {
+        "containers": {
+          "type": "object"
+        },
+        "created": {
+          "type": "string",
+          "description": "Created contains the timestamp when this network was created."
+        },
+        "dnsEnabled": {
+          "type": "boolean",
+          "description": "DNSEnabled is whether name resolution is active for container on\nthis Network. Only supported with the bridge driver."
+        },
+        "driver": {
+          "type": "string",
+          "description": "Driver for this Network, e.g. bridge, macvlan..."
+        },
+        "internal": {
+          "type": "boolean",
+          "description": "Internal is whether the Network should not have external routes\nto public or other Networks."
+        },
+        "ipamOptions": {
+          "type": "object",
+          "description": "IPAMOptions contains options used for the ip assignment."
+        },
+        "ipv6Enabled": {
+          "type": "boolean",
+          "description": "IPv6Enabled if set to true an ipv6 subnet should be created for this net."
+        },
+        "labels": {
+          "type": "object",
+          "description": "Labels is a set of key-value labels that have been applied to the\nNetwork."
+        },
+        "name": {
+          "type": "string",
+          "description": "Name of the Network."
+        },
+        "networkDnsServers": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "List of custom DNS server for podman's DNS resolver at network level,\nall the containers attached to this network will consider resolvers\nconfigured at network level."
+        },
+        "networkInterface": {
+          "type": "string",
+          "description": "NetworkInterface is the network interface name on the host."
+        },
+        "options": {
+          "type": "object",
+          "description": "Options is a set of key-value options that have been applied to\nthe Network."
+        },
+        "routes": {
+          "type": "array",
+          "items": {
+            "$ref": "#/types/podman:index:Route"
+          },
+          "description": "Routes to use for this network."
+        },
+        "subnets": {
+          "type": "array",
+          "items": {
+            "$ref": "#/types/podman:index:Subnet"
+          },
+          "description": "Subnets to use for this network."
+        }
+      },
+      "inputProperties": {
+        "created": {
+          "type": "string",
+          "description": "Created contains the timestamp when this network was created."
+        },
+        "dnsEnabled": {
+          "type": "boolean",
+          "description": "DNSEnabled is whether name resolution is active for container on\nthis Network. Only supported with the bridge driver."
+        },
+        "driver": {
+          "type": "string",
+          "description": "Driver for this Network, e.g. bridge, macvlan..."
+        },
+        "internal": {
+          "type": "boolean",
+          "description": "Internal is whether the Network should not have external routes\nto public or other Networks."
+        },
+        "ipamOptions": {
+          "type": "object",
+          "description": "IPAMOptions contains options used for the ip assignment."
+        },
+        "ipv6Enabled": {
+          "type": "boolean",
+          "description": "IPv6Enabled if set to true an ipv6 subnet should be created for this net."
+        },
+        "labels": {
+          "type": "object",
+          "description": "Labels is a set of key-value labels that have been applied to the\nNetwork."
+        },
+        "name": {
+          "type": "string",
+          "description": "Name of the Network."
+        },
+        "networkDnsServers": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "List of custom DNS server for podman's DNS resolver at network level,\nall the containers attached to this network will consider resolvers\nconfigured at network level."
+        },
+        "networkInterface": {
+          "type": "string",
+          "description": "NetworkInterface is the network interface name on the host."
+        },
+        "options": {
+          "type": "object",
+          "description": "Options is a set of key-value options that have been applied to\nthe Network."
+        },
+        "routes": {
+          "type": "array",
+          "items": {
+            "$ref": "#/types/podman:index:Route"
+          },
+          "description": "Routes to use for this network."
+        },
+        "subnets": {
+          "type": "array",
+          "items": {
+            "$ref": "#/types/podman:index:Subnet"
+          },
+          "description": "Subnets to use for this network."
+        }
+      }
+    },
+    "podman:pods:Pod": {
+      "properties": {
+        "blkioWeight": {
+          "type": "integer",
+          "description": "BlkioWeight contains the blkio weight limit for the pod"
+        },
+        "blkioWeightDevice": {
+          "type": "array",
+          "items": {
+            "$ref": "#/types/podman:index:InspectBlkioWeightDevice"
+          },
+          "description": "BlkioWeightDevice contains the blkio weight device limits for the pod"
+        },
+        "cgroupParent": {
+          "type": "string",
+          "description": "CgroupParent is the parent for the Cgroup that the pod will create.\nThis pod cgroup will, in turn, be the default cgroup parent for all\ncontainers in the pod.\nOptional."
+        },
+        "cgroupPath": {
+          "type": "string",
+          "description": "CgroupPath is the path to the pod's Cgroup."
+        },
+        "containers": {
+          "type": "array",
+          "items": {
+            "$ref": "#/types/podman:index:InspectPodContainerInfo"
+          },
+          "description": "Containers gives a brief summary of all containers in the pod and\ntheir current status."
+        },
+        "cpuPeriod": {
+          "type": "integer",
+          "description": "CPUPeriod contains the CPU period of the pod"
+        },
+        "cpuQuota": {
+          "type": "integer",
+          "description": "CPUQuota contains the CPU quota of the pod"
+        },
+        "cpuShares": {
+          "type": "integer",
+          "description": "CPUShares contains the cpu shares for the pod"
+        },
+        "cpusetCpus": {
+          "type": "string",
+          "description": "CPUSetCPUs contains linux specific CPU data for the pod"
+        },
+        "cpusetMems": {
+          "type": "string",
+          "description": "CPUSetMems contains linux specific CPU data for the pod"
+        },
+        "createCgroup": {
+          "type": "boolean",
+          "description": "CreateCgroup is whether this pod will create its own Cgroup to group\ncontainers under."
+        },
+        "createCommand": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "CreateCommand is the full command plus arguments of the process the\ncontainer has been created with."
+        },
+        "createInfra": {
+          "type": "boolean",
+          "description": "CreateInfra is whether this pod will create an infra container to\nshare namespaces."
+        },
+        "created": {
+          "type": "string",
+          "description": "Created is the time when the pod was created."
+        },
+        "deviceReadBps": {
+          "type": "array",
+          "items": {
+            "$ref": "#/types/podman:index:InspectBlkioThrottleDevice"
+          },
+          "description": "BlkioDeviceReadBps contains the Read/Access limit for the pod's devices"
+        },
+        "deviceWriteBps": {
+          "type": "array",
+          "items": {
+            "$ref": "#/types/podman:index:InspectBlkioThrottleDevice"
+          },
+          "description": "BlkioDeviceReadBps contains the Read/Access limit for the pod's devices"
+        },
+        "devices": {
+          "type": "array",
+          "items": {
+            "$ref": "#/types/podman:index:InspectDevice"
+          },
+          "description": "Devices contains the specified host devices"
+        },
+        "dnsOption": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "DNSOption is a set of DNS options that will be used in the infra\ncontainer's resolv.conf, which will, by default, be shared with all\ncontainers in the pod.\nConflicts with NoInfra=true.\nOptional."
+        },
+        "dnsSearch": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "DNSSearch is a set of DNS search domains that will be used in the\ninfra container's resolv.conf, which will, by default, be shared with\nall containers in the pod.\nIf not provided, DNS search domains from the host's resolv.conf will\nbe used.\nConflicts with NoInfra=true.\nOptional."
+        },
+        "dnsServer": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "DNSServer is a set of DNS servers that will be used in the infra\ncontainer's resolv.conf, which will, by default, be shared with all\ncontainers in the pod.\nIf not provided, the host's DNS servers will be used, unless the only\nserver set is a localhost address. As the container cannot connect to\nthe host's localhost, a default server will instead be set.\nConflicts with NoInfra=true.\nOptional."
+        },
+        "exitPolicy": {
+          "type": "string",
+          "description": "ExitPolicy determines the pod's exit and stop behaviour."
+        },
+        "hostadd": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "HostAdd is a set of hosts that will be added to the infra container's\netc/hosts that will, by default, be shared with all containers in\nthe pod.\nConflicts with NoInfra=true and NoManageHosts.\nOptional."
+        },
+        "hostname": {
+          "type": "string",
+          "description": "Hostname is the pod's hostname. If not set, the name of the pod will\nbe used (if a name was not provided here, the name auto-generated for\nthe pod will be used). This will be used by the infra container and\nall containers in the pod as long as the UTS namespace is shared.\nOptional."
+        },
+        "hostsFile": {
+          "type": "string",
+          "description": "HostsFile is the base file to create the `/etc/hosts` file inside the infra container.\nThis must either be an absolute path to a file on the host system, or one of the\nspecial flags `image` or `none`.\nIf it is empty it defaults to the base_hosts_file configuration in containers.conf.\nConflicts with NoInfra=true and NoManageHosts.\nOptional."
+        },
+        "idmappings": {
+          "$ref": "#/types/podman:index:IDMappingOptions"
+        },
+        "imageVolumes": {
+          "type": "array",
+          "items": {
+            "$ref": "#/types/podman:index:ImageVolume"
+          },
+          "description": "Image volumes bind-mount a container-image mount into the pod's infra container.\nOptional."
+        },
+        "infraCommand": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "InfraCommand sets the command that will be used to start the infra\ncontainer.\nIf not set, the default set in the Libpod configuration file will be\nused.\nConflicts with NoInfra=true.\nOptional."
+        },
+        "infraConfig": {
+          "$ref": "#/types/podman:index:InspectPodInfraConfig"
+        },
+        "infraConmonPidFile": {
+          "type": "string",
+          "description": "InfraConmonPidFile is a custom path to store the infra container's\nconmon PID."
+        },
+        "infraContainerID": {
+          "type": "string",
+          "description": "InfraContainerID is the ID of the pod's infra container, if one is\npresent."
+        },
+        "infraImage": {
+          "type": "string",
+          "description": "InfraImage is the image that will be used for the infra container.\nIf not set, the default set in the Libpod configuration file will be\nused.\nConflicts with NoInfra=true.\nOptional."
+        },
+        "infraName": {
+          "type": "string",
+          "description": "InfraName is the name that will be used for the infra container.\nIf not set, the default set in the Libpod configuration file will be\nused.\nConflicts with NoInfra=true.\nOptional."
+        },
+        "ipcns": {
+          "$ref": "#/types/podman:index:Namespace"
+        },
+        "labels": {
+          "type": "object",
+          "description": "Labels are key-value pairs that are used to add metadata to pods.\nOptional."
+        },
+        "lockNumber": {
+          "type": "integer",
+          "description": "Number of the pod's Libpod lock."
+        },
+        "memoryLimit": {
+          "type": "integer",
+          "description": "MemoryLimit contains the specified cgroup memory limit for the pod"
+        },
+        "memorySwap": {
+          "type": "integer",
+          "description": "MemorySwap contains the specified memory swap limit for the pod"
+        },
+        "mounts": {
+          "type": "array",
+          "items": {
+            "$ref": "#/types/podman:index:SpecsGoMount"
+          },
+          "description": "Mounts are mounts that will be added to the pod.\nThese will supersede Image Volumes and VolumesFrom volumes where\nthere are conflicts.\nOptional."
+        },
+        "name": {
+          "type": "string",
+          "description": "Name is the name of the pod.\nIf not provided, a name will be generated when the pod is created.\nOptional."
+        },
+        "namespace": {
+          "type": "string",
+          "description": "Namespace is the Libpod namespace the pod is placed in."
+        },
+        "netns": {
+          "$ref": "#/types/podman:index:Namespace"
+        },
+        "networkOptions": {
+          "type": "object",
+          "description": "NetworkOptions are additional options for each network\nOptional."
+        },
+        "networks": {
+          "type": "object",
+          "description": "Map of networks names to ids the container should join to.\nYou can request additional settings for each network, you can\nset network aliases, static ips, static mac address  and the\nnetwork interface name for this container on the specific network.\nIf the map is empty and the bridge network mode is set the container\nwill be joined to the default network."
+        },
+        "noInfra": {
+          "type": "boolean",
+          "description": "NoInfra tells the pod not to create an infra container. If this is\ndone, many networking-related options will become unavailable.\nConflicts with setting any options in PodNetworkConfig, and the\nInfraCommand and InfraImages in this struct.\nOptional."
+        },
+        "noManageHostname": {
+          "type": "boolean",
+          "description": "NoManageHostname indicates that /etc/hostname should not be managed\nby the pod. Instead, each container will create a separate\netc/hostname as they would if not in a pod."
+        },
+        "noManageHosts": {
+          "type": "boolean",
+          "description": "NoManageHosts indicates that /etc/hosts should not be managed by the\npod. Instead, each container will create a separate /etc/hosts as\nthey would if not in a pod.\nConflicts with HostAdd."
+        },
+        "noManageResolvConf": {
+          "type": "boolean",
+          "description": "NoManageResolvConf indicates that /etc/resolv.conf should not be\nmanaged by the pod. Instead, each container will create and manage a\nseparate resolv.conf as if they had not joined a pod.\nConflicts with NoInfra=true and DNSServer, DNSSearch, DNSOption.\nOptional."
+        },
+        "numContainers": {
+          "type": "integer",
+          "description": "NumContainers is the number of containers in the pod, including the\ninfra container."
+        },
+        "overlayVolumes": {
+          "type": "array",
+          "items": {
+            "$ref": "#/types/podman:index:OverlayVolume"
+          },
+          "description": "Overlay volumes are named volumes that will be added to the pod.\nOptional."
+        },
+        "pidns": {
+          "$ref": "#/types/podman:index:Namespace"
+        },
+        "podCreateCommand": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "podDevices": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Devices contains user specified Devices to be added to the Pod"
+        },
+        "portmappings": {
+          "type": "array",
+          "items": {
+            "$ref": "#/types/podman:index:PortMapping"
+          },
+          "description": "PortMappings is a set of ports to map into the infra container.\nAs, by default, containers share their network with the infra\ncontainer, this will forward the ports to the entire pod.\nOnly available if NetNS is set to Bridge or Pasta.\nOptional."
+        },
+        "resourceLimits": {
+          "$ref": "#/types/podman:index:LinuxResources"
+        },
+        "restartPolicy": {
+          "type": "string",
+          "description": "RestartPolicy is the pod's restart policy - an action which\nwill be taken when one or all the containers in the pod exits.\nIf not given, the default policy will be set to Always, which\nrestarts the containers in the pod when they exit indefinitely.\nOptional."
+        },
+        "restartTries": {
+          "type": "integer",
+          "description": "RestartRetries is the number of attempts that will be made to restart\nthe container.\nOnly available when RestartPolicy is set to \"on-failure\".\nOptional."
+        },
+        "securityOpt": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "serviceContainerID": {
+          "type": "string",
+          "description": "The ID of the pod's service container."
+        },
+        "shareParent": {
+          "type": "boolean",
+          "description": "PodCreateCommand is the command used to create this pod.\nThis will be shown in the output of Inspect() on the pod, and may\nalso be used by some tools that wish to recreate the pod\n(e.g. `podman generate systemd --new`).\nOptional.\nShareParent determines if all containers in the pod will share the pod's cgroup as the cgroup parent"
+        },
+        "sharedNamespaces": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "SharedNamespaces instructs the pod to share a set of namespaces.\nShared namespaces will be joined (by default) by every container\nwhich joins the pod.\nIf not set and NoInfra is false, the pod will set a default set of\nnamespaces to share.\nConflicts with NoInfra=true.\nOptional."
+        },
+        "shmSize": {
+          "type": "integer",
+          "description": "ShmSize is the size of the tmpfs to mount in at /dev/shm, in bytes.\nConflicts with ShmSize if IpcNS is not private.\nOptional."
+        },
+        "shmSizeSystemd": {
+          "type": "integer",
+          "description": "ShmSizeSystemd is the size of systemd-specific tmpfs mounts\nspecifically /run, /run/lock, /var/log/journal and /tmp.\nOptional"
+        },
+        "state": {
+          "type": "string",
+          "description": "State represents the current state of the pod."
+        },
+        "sysctl": {
+          "type": "object",
+          "description": "Sysctl sets kernel parameters for the pod"
+        },
+        "userns": {
+          "$ref": "#/types/podman:index:Namespace"
+        },
+        "utsns": {
+          "$ref": "#/types/podman:index:Namespace"
+        },
+        "volumes": {
+          "type": "array",
+          "items": {
+            "$ref": "#/types/podman:index:NamedVolume"
+          },
+          "description": "Volumes are named volumes that will be added to the pod.\nThese will supersede Image Volumes and VolumesFrom  volumes where\nthere are conflicts.\nOptional."
+        },
+        "volumesFrom": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "VolumesFrom is a set of containers whose volumes will be added to\nthis pod. The name or ID of the container must be provided, and\nmay optionally be followed by a : and then one or more\ncomma-separated options. Valid options are 'ro', 'rw', and 'z'.\nOptions will be used for all volumes sourced from the container."
+        }
+      },
+      "inputProperties": {
+        "cgroupParent": {
+          "type": "string",
+          "description": "CgroupParent is the parent for the Cgroup that the pod will create.\nThis pod cgroup will, in turn, be the default cgroup parent for all\ncontainers in the pod.\nOptional."
+        },
+        "dnsOption": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "DNSOption is a set of DNS options that will be used in the infra\ncontainer's resolv.conf, which will, by default, be shared with all\ncontainers in the pod.\nConflicts with NoInfra=true.\nOptional."
+        },
+        "dnsSearch": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "DNSSearch is a set of DNS search domains that will be used in the\ninfra container's resolv.conf, which will, by default, be shared with\nall containers in the pod.\nIf not provided, DNS search domains from the host's resolv.conf will\nbe used.\nConflicts with NoInfra=true.\nOptional."
+        },
+        "dnsServer": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "DNSServer is a set of DNS servers that will be used in the infra\ncontainer's resolv.conf, which will, by default, be shared with all\ncontainers in the pod.\nIf not provided, the host's DNS servers will be used, unless the only\nserver set is a localhost address. As the container cannot connect to\nthe host's localhost, a default server will instead be set.\nConflicts with NoInfra=true.\nOptional."
+        },
+        "exitPolicy": {
+          "type": "string",
+          "description": "ExitPolicy determines the pod's exit and stop behaviour."
+        },
+        "hostadd": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "HostAdd is a set of hosts that will be added to the infra container's\netc/hosts that will, by default, be shared with all containers in\nthe pod.\nConflicts with NoInfra=true and NoManageHosts.\nOptional."
+        },
+        "hostname": {
+          "type": "string",
+          "description": "Hostname is the pod's hostname. If not set, the name of the pod will\nbe used (if a name was not provided here, the name auto-generated for\nthe pod will be used). This will be used by the infra container and\nall containers in the pod as long as the UTS namespace is shared.\nOptional."
+        },
+        "hostsFile": {
+          "type": "string",
+          "description": "HostsFile is the base file to create the `/etc/hosts` file inside the infra container.\nThis must either be an absolute path to a file on the host system, or one of the\nspecial flags `image` or `none`.\nIf it is empty it defaults to the base_hosts_file configuration in containers.conf.\nConflicts with NoInfra=true and NoManageHosts.\nOptional."
+        },
+        "idmappings": {
+          "$ref": "#/types/podman:index:IDMappingOptions"
+        },
+        "imageVolumes": {
+          "type": "array",
+          "items": {
+            "$ref": "#/types/podman:index:ImageVolume"
+          },
+          "description": "Image volumes bind-mount a container-image mount into the pod's infra container.\nOptional."
+        },
+        "infraCommand": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "InfraCommand sets the command that will be used to start the infra\ncontainer.\nIf not set, the default set in the Libpod configuration file will be\nused.\nConflicts with NoInfra=true.\nOptional."
+        },
+        "infraConmonPidFile": {
+          "type": "string",
+          "description": "InfraConmonPidFile is a custom path to store the infra container's\nconmon PID."
+        },
+        "infraImage": {
+          "type": "string",
+          "description": "InfraImage is the image that will be used for the infra container.\nIf not set, the default set in the Libpod configuration file will be\nused.\nConflicts with NoInfra=true.\nOptional."
+        },
+        "infraName": {
+          "type": "string",
+          "description": "InfraName is the name that will be used for the infra container.\nIf not set, the default set in the Libpod configuration file will be\nused.\nConflicts with NoInfra=true.\nOptional."
+        },
+        "ipcns": {
+          "$ref": "#/types/podman:index:Namespace"
+        },
+        "labels": {
+          "type": "object",
+          "description": "Labels are key-value pairs that are used to add metadata to pods.\nOptional."
+        },
+        "mounts": {
+          "type": "array",
+          "items": {
+            "$ref": "#/types/podman:index:SpecsGoMount"
+          },
+          "description": "Mounts are mounts that will be added to the pod.\nThese will supersede Image Volumes and VolumesFrom volumes where\nthere are conflicts.\nOptional."
+        },
+        "name": {
+          "type": "string",
+          "description": "Name is the name of the pod.\nIf not provided, a name will be generated when the pod is created.\nOptional."
+        },
+        "netns": {
+          "$ref": "#/types/podman:index:Namespace"
+        },
+        "networkOptions": {
+          "type": "object",
+          "description": "NetworkOptions are additional options for each network\nOptional."
+        },
+        "networks": {
+          "type": "object",
+          "description": "Map of networks names to ids the container should join to.\nYou can request additional settings for each network, you can\nset network aliases, static ips, static mac address  and the\nnetwork interface name for this container on the specific network.\nIf the map is empty and the bridge network mode is set the container\nwill be joined to the default network."
+        },
+        "noInfra": {
+          "type": "boolean",
+          "description": "NoInfra tells the pod not to create an infra container. If this is\ndone, many networking-related options will become unavailable.\nConflicts with setting any options in PodNetworkConfig, and the\nInfraCommand and InfraImages in this struct.\nOptional."
+        },
+        "noManageHostname": {
+          "type": "boolean",
+          "description": "NoManageHostname indicates that /etc/hostname should not be managed\nby the pod. Instead, each container will create a separate\netc/hostname as they would if not in a pod."
+        },
+        "noManageHosts": {
+          "type": "boolean",
+          "description": "NoManageHosts indicates that /etc/hosts should not be managed by the\npod. Instead, each container will create a separate /etc/hosts as\nthey would if not in a pod.\nConflicts with HostAdd."
+        },
+        "noManageResolvConf": {
+          "type": "boolean",
+          "description": "NoManageResolvConf indicates that /etc/resolv.conf should not be\nmanaged by the pod. Instead, each container will create and manage a\nseparate resolv.conf as if they had not joined a pod.\nConflicts with NoInfra=true and DNSServer, DNSSearch, DNSOption.\nOptional."
+        },
+        "overlayVolumes": {
+          "type": "array",
+          "items": {
+            "$ref": "#/types/podman:index:OverlayVolume"
+          },
+          "description": "Overlay volumes are named volumes that will be added to the pod.\nOptional."
+        },
+        "pidns": {
+          "$ref": "#/types/podman:index:Namespace"
+        },
+        "podCreateCommand": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "podDevices": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Devices contains user specified Devices to be added to the Pod"
+        },
+        "portmappings": {
+          "type": "array",
+          "items": {
+            "$ref": "#/types/podman:index:PortMapping"
+          },
+          "description": "PortMappings is a set of ports to map into the infra container.\nAs, by default, containers share their network with the infra\ncontainer, this will forward the ports to the entire pod.\nOnly available if NetNS is set to Bridge or Pasta.\nOptional."
+        },
+        "resourceLimits": {
+          "$ref": "#/types/podman:index:LinuxResources"
+        },
+        "restartPolicy": {
+          "type": "string",
+          "description": "RestartPolicy is the pod's restart policy - an action which\nwill be taken when one or all the containers in the pod exits.\nIf not given, the default policy will be set to Always, which\nrestarts the containers in the pod when they exit indefinitely.\nOptional."
+        },
+        "restartTries": {
+          "type": "integer",
+          "description": "RestartRetries is the number of attempts that will be made to restart\nthe container.\nOnly available when RestartPolicy is set to \"on-failure\".\nOptional."
+        },
+        "securityOpt": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "serviceContainerID": {
+          "type": "string",
+          "description": "The ID of the pod's service container."
+        },
+        "shareParent": {
+          "type": "boolean",
+          "description": "PodCreateCommand is the command used to create this pod.\nThis will be shown in the output of Inspect() on the pod, and may\nalso be used by some tools that wish to recreate the pod\n(e.g. `podman generate systemd --new`).\nOptional.\nShareParent determines if all containers in the pod will share the pod's cgroup as the cgroup parent"
+        },
+        "sharedNamespaces": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "SharedNamespaces instructs the pod to share a set of namespaces.\nShared namespaces will be joined (by default) by every container\nwhich joins the pod.\nIf not set and NoInfra is false, the pod will set a default set of\nnamespaces to share.\nConflicts with NoInfra=true.\nOptional."
+        },
+        "shmSize": {
+          "type": "integer",
+          "description": "ShmSize is the size of the tmpfs to mount in at /dev/shm, in bytes.\nConflicts with ShmSize if IpcNS is not private.\nOptional."
+        },
+        "shmSizeSystemd": {
+          "type": "integer",
+          "description": "ShmSizeSystemd is the size of systemd-specific tmpfs mounts\nspecifically /run, /run/lock, /var/log/journal and /tmp.\nOptional"
+        },
+        "sysctl": {
+          "type": "object",
+          "description": "Sysctl sets kernel parameters for the pod"
+        },
+        "userns": {
+          "$ref": "#/types/podman:index:Namespace"
+        },
+        "utsns": {
+          "$ref": "#/types/podman:index:Namespace"
+        },
+        "volumes": {
+          "type": "array",
+          "items": {
+            "$ref": "#/types/podman:index:NamedVolume"
+          },
+          "description": "Volumes are named volumes that will be added to the pod.\nThese will supersede Image Volumes and VolumesFrom  volumes where\nthere are conflicts.\nOptional."
+        },
+        "volumesFrom": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "VolumesFrom is a set of containers whose volumes will be added to\nthis pod. The name or ID of the container must be provided, and\nmay optionally be followed by a : and then one or more\ncomma-separated options. Valid options are 'ro', 'rw', and 'z'.\nOptions will be used for all volumes sourced from the container."
+        }
+      }
+    },
+    "podman:secrets:Secret": {
+      "properties": {
+        "createdAt": {
+          "type": "string"
+        },
+        "data": {
+          "type": "string",
+          "description": "Raw request body payload."
+        },
+        "driver": {
+          "type": "string",
+          "description": "Secret driver"
+        },
+        "driveropts": {
+          "type": "string",
+          "description": "JSON-encoded string containing secret driver options as a `map[string]string`."
+        },
+        "iD": {
+          "type": "string"
+        },
+        "ignore": {
+          "type": "boolean",
+          "description": "Ignore the request if a secret with the same name already exists."
+        },
+        "labels": {
+          "type": "string",
+          "description": "JSON-encoded string containing labels as a `map[string]string`."
+        },
+        "name": {
+          "type": "string",
+          "description": "User-defined name of the secret."
+        },
+        "replace": {
+          "type": "boolean",
+          "description": "Replace an existing secret with the same name."
+        },
+        "secretData": {
+          "type": "string"
+        },
+        "spec": {
+          "$ref": "#/types/podman:index:SecretSpec"
+        },
+        "updatedAt": {
+          "type": "string"
+        }
+      },
+      "inputProperties": {
+        "data": {
+          "type": "string",
+          "description": "Raw request body payload."
+        },
+        "driver": {
+          "type": "string",
+          "description": "Secret driver"
+        },
+        "driveropts": {
+          "type": "string",
+          "description": "JSON-encoded string containing secret driver options as a `map[string]string`."
+        },
+        "ignore": {
+          "type": "boolean",
+          "description": "Ignore the request if a secret with the same name already exists."
+        },
+        "labels": {
+          "type": "string",
+          "description": "JSON-encoded string containing labels as a `map[string]string`."
+        },
+        "name": {
+          "type": "string",
+          "description": "User-defined name of the secret."
+        },
+        "replace": {
+          "type": "boolean",
+          "description": "Replace an existing secret with the same name."
+        }
+      },
+      "requiredInputs": [
+        "name",
+        "data"
+      ]
+    },
+    "podman:volumes:Volume": {
+      "properties": {
+        "anonymous": {
+          "type": "boolean",
+          "description": "Anonymous indicates that the volume was created as an anonymous\nvolume for a specific container, and will be removed when any\ncontainer using it is removed."
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "CreatedAt is the date and time the volume was created at. This is not\nstored for older Libpod volumes; if so, it will be omitted."
+        },
+        "driver": {
+          "type": "string",
+          "description": "Volume driver to use"
+        },
+        "gID": {
+          "type": "integer",
+          "description": "GID that the volume will be created as"
+        },
+        "ignoreIfExists": {
+          "type": "boolean",
+          "description": "Ignore existing volumes"
+        },
+        "label": {
+          "type": "object",
+          "description": "User-defined key/value metadata. Provided for compatibility"
+        },
+        "labels": {
+          "type": "object",
+          "description": "User-defined key/value metadata. Preferred field, will override Label"
+        },
+        "lockNumber": {
+          "type": "integer",
+          "description": "LockNumber is the number of the volume's Libpod lock."
+        },
+        "mountCount": {
+          "type": "integer",
+          "description": "MountCount is the number of times this volume has been mounted."
+        },
+        "mountpoint": {
+          "type": "string",
+          "description": "Mountpoint is the path on the host where the volume is mounted."
+        },
+        "name": {
+          "type": "string",
+          "description": "New volume's name. Can be left blank"
+        },
+        "needsChown": {
+          "type": "boolean",
+          "description": "NeedsChown indicates that the next time the volume is mounted into\na container, the container will chown the volume to the container process\nUID/GID."
+        },
+        "needsCopyUp": {
+          "type": "boolean",
+          "description": "NeedsCopyUp indicates that the next time the volume is mounted into"
+        },
+        "options": {
+          "type": "object",
+          "description": "Mapping of driver options and values."
+        },
+        "scope": {
+          "type": "string",
+          "description": "Scope is unused and provided solely for Docker compatibility. It is\nunconditionally set to \"local\"."
+        },
+        "status": {
+          "type": "object",
+          "description": "Status is used to return information on the volume's current state,\nif the volume was created using a volume plugin (uses a Driver that\nis not the local driver).\nStatus is provided to us by an external program, so no guarantees are\nmade about its format or contents. Further, it is an optional field,\nso it may not be set even in cases where a volume plugin is in use."
+        },
+        "storageID": {
+          "type": "string",
+          "description": "StorageID is the ID of the container backing the volume in c/storage.\nOnly used with Image Volumes."
+        },
+        "timeout": {
+          "type": "integer",
+          "description": "Timeout is the specified driver timeout if given"
+        },
+        "uID": {
+          "type": "integer",
+          "description": "UID that the volume will be created as"
+        }
+      },
+      "inputProperties": {
+        "driver": {
+          "type": "string",
+          "description": "Volume driver to use"
+        },
+        "gID": {
+          "type": "integer",
+          "description": "GID that the volume will be created as"
+        },
+        "ignoreIfExists": {
+          "type": "boolean",
+          "description": "Ignore existing volumes"
+        },
+        "label": {
+          "type": "object",
+          "description": "User-defined key/value metadata. Provided for compatibility"
+        },
+        "labels": {
+          "type": "object",
+          "description": "User-defined key/value metadata. Preferred field, will override Label"
+        },
+        "name": {
+          "type": "string",
+          "description": "New volume's name. Can be left blank"
+        },
+        "options": {
+          "type": "object",
+          "description": "Mapping of driver options and values."
+        },
+        "uID": {
+          "type": "integer",
+          "description": "UID that the volume will be created as"
+        }
+      }
+    }
+  }
+}

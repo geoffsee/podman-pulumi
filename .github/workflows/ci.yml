@@ -1,0 +1,82 @@
+name: ci
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          cache: true
+
+      - uses: pulumi/setup-pulumi@v2
+
+      - name: Test
+        run: go test ./...
+
+      - name: Build
+        run: make build
+
+      - name: Schema
+        run: make check-schema
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "8.0.x"
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - uses: gradle/actions/setup-gradle@v6
+        with:
+          gradle-version: "8.10"
+
+      - name: Generate SDKs
+        run: bash scripts/gen-sdk.sh
+
+      - name: Build Node.js SDK
+        working-directory: sdk/nodejs
+        run: |
+          npm install
+          npm run build
+          npm pack --dry-run
+
+      - name: Pack NuGet SDK
+        run: dotnet pack sdk/dotnet/Geoffsee.Podman.csproj --configuration Release --output dist/nuget
+
+      - name: Build Python SDK
+        working-directory: sdk/python
+        run: |
+          python -m venv /tmp/pybuild
+          /tmp/pybuild/bin/pip install build
+          /tmp/pybuild/bin/python -m build
+          echo "GitHub Packages has no Python registry; the wheel is not published."
+
+      - name: Note Go SDK
+        run: |
+          test -f sdk/go/podman/go.mod
+          echo "GitHub Packages has no Go module registry; sdk/go is not published."
+
+      - name: Compile Java SDK
+        run: gradle -p sdk/java assemble --no-daemon

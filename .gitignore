@@ -1,0 +1,9 @@
+bin/
+dist/
+sdk/
+schema.json.tmp
+.pulumi/
+.pulumi-state/
+Pulumi.*.yaml
+*.exe
+vendor/

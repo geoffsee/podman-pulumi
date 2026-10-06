@@ -1,0 +1,16 @@
+name: podman-example
+runtime: yaml
+description: Exercise the generated Podman provider against a local engine.
+
+plugins:
+  providers:
+    - name: podman
+      path: ../..
+
+resources:
+  demoVolume:
+    type: podman:volumes:Volume
+    properties:
+      name: pulumi-podman-demo
+      labels:
+        managed-by: pulumi

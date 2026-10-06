@@ -1,0 +1,188 @@
+[
+  {
+    "method": "POST",
+    "adaptedPath": "/artifacts",
+    "upstreamMethod": "POST",
+    "upstreamPath": "/v6.0.0/libpod/artifacts/pull",
+    "queryFromBody": [
+      "name",
+      "retry",
+      "retryDelay",
+      "tlsVerify"
+    ],
+    "bodyMode": "query"
+  },
+  {
+    "method": "DELETE",
+    "adaptedPath": "/artifacts/{id}",
+    "upstreamMethod": "DELETE",
+    "upstreamPath": "/v6.0.0/libpod/artifacts/{name}"
+  },
+  {
+    "method": "GET",
+    "adaptedPath": "/artifacts/{id}",
+    "upstreamMethod": "GET",
+    "upstreamPath": "/v6.0.0/libpod/artifacts/{name}/json"
+  },
+  {
+    "method": "POST",
+    "adaptedPath": "/containers",
+    "upstreamMethod": "POST",
+    "upstreamPath": "/v6.0.0/libpod/containers/create",
+    "startPath": "/v6.0.0/libpod/containers/{id}/start"
+  },
+  {
+    "method": "DELETE",
+    "adaptedPath": "/containers/{id}",
+    "upstreamMethod": "DELETE",
+    "upstreamPath": "/v6.0.0/libpod/containers/{name}",
+    "defaultQuery": {
+      "force": "true",
+      "v": "true"
+    }
+  },
+  {
+    "method": "GET",
+    "adaptedPath": "/containers/{id}",
+    "upstreamMethod": "GET",
+    "upstreamPath": "/v6.0.0/libpod/containers/{name}/json"
+  },
+  {
+    "method": "POST",
+    "adaptedPath": "/images",
+    "upstreamMethod": "POST",
+    "upstreamPath": "/v6.0.0/libpod/images/pull",
+    "queryFromBody": [
+      "reference",
+      "quiet",
+      "compatMode",
+      "pullProgress",
+      "Arch",
+      "OS",
+      "Variant",
+      "policy",
+      "tlsVerify",
+      "allTags"
+    ],
+    "defaultQuery": {
+      "quiet": "true"
+    },
+    "bodyMode": "query"
+  },
+  {
+    "method": "DELETE",
+    "adaptedPath": "/images/{id}",
+    "upstreamMethod": "DELETE",
+    "upstreamPath": "/v6.0.0/libpod/images/{name}"
+  },
+  {
+    "method": "GET",
+    "adaptedPath": "/images/{id}",
+    "upstreamMethod": "GET",
+    "upstreamPath": "/v6.0.0/libpod/images/{name}/json"
+  },
+  {
+    "method": "POST",
+    "adaptedPath": "/networks",
+    "upstreamMethod": "POST",
+    "upstreamPath": "/v6.0.0/libpod/networks/create"
+  },
+  {
+    "method": "DELETE",
+    "adaptedPath": "/networks/{id}",
+    "upstreamMethod": "DELETE",
+    "upstreamPath": "/v6.0.0/libpod/networks/{name}"
+  },
+  {
+    "method": "GET",
+    "adaptedPath": "/networks/{id}",
+    "upstreamMethod": "GET",
+    "upstreamPath": "/v6.0.0/libpod/networks/{name}/json"
+  },
+  {
+    "method": "PATCH",
+    "adaptedPath": "/networks/{id}",
+    "upstreamMethod": "POST",
+    "upstreamPath": "/v6.0.0/libpod/networks/{name}/update"
+  },
+  {
+    "method": "POST",
+    "adaptedPath": "/pods",
+    "upstreamMethod": "POST",
+    "upstreamPath": "/v6.0.0/libpod/pods/create",
+    "startPath": "/v6.0.0/libpod/pods/{id}/start"
+  },
+  {
+    "method": "DELETE",
+    "adaptedPath": "/pods/{id}",
+    "upstreamMethod": "DELETE",
+    "upstreamPath": "/v6.0.0/libpod/pods/{name}",
+    "defaultQuery": {
+      "force": "true"
+    }
+  },
+  {
+    "method": "GET",
+    "adaptedPath": "/pods/{id}",
+    "upstreamMethod": "GET",
+    "upstreamPath": "/v6.0.0/libpod/pods/{name}/json"
+  },
+  {
+    "method": "POST",
+    "adaptedPath": "/quadlets",
+    "upstreamMethod": "POST",
+    "upstreamPath": "/v6.0.0/libpod/quadlets"
+  },
+  {
+    "method": "DELETE",
+    "adaptedPath": "/quadlets/{id}",
+    "upstreamMethod": "DELETE",
+    "upstreamPath": "/v6.0.0/libpod/quadlets/{name}"
+  },
+  {
+    "method": "POST",
+    "adaptedPath": "/secrets",
+    "upstreamMethod": "POST",
+    "upstreamPath": "/v6.0.0/libpod/secrets/create",
+    "queryFromBody": [
+      "name",
+      "driver",
+      "driveropts",
+      "labels",
+      "replace",
+      "ignore"
+    ],
+    "bodyMode": "rawString",
+    "rawStringField": "data"
+  },
+  {
+    "method": "DELETE",
+    "adaptedPath": "/secrets/{id}",
+    "upstreamMethod": "DELETE",
+    "upstreamPath": "/v6.0.0/libpod/secrets/{name}"
+  },
+  {
+    "method": "GET",
+    "adaptedPath": "/secrets/{id}",
+    "upstreamMethod": "GET",
+    "upstreamPath": "/v6.0.0/libpod/secrets/{name}/json"
+  },
+  {
+    "method": "POST",
+    "adaptedPath": "/volumes",
+    "upstreamMethod": "POST",
+    "upstreamPath": "/v6.0.0/libpod/volumes/create"
+  },
+  {
+    "method": "DELETE",
+    "adaptedPath": "/volumes/{id}",
+    "upstreamMethod": "DELETE",
+    "upstreamPath": "/v6.0.0/libpod/volumes/{name}"
+  },
+  {
+    "method": "GET",
+    "adaptedPath": "/volumes/{id}",
+    "upstreamMethod": "GET",
+    "upstreamPath": "/v6.0.0/libpod/volumes/{name}/json"
+  }
+]
