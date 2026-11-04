@@ -9016,7 +9016,10 @@ definitions:
         type: object
         x-go-package: go.podman.io/common/libnetwork/types
     PortSummary:
-        example: '{"PrivatePort":8080,"PublicPort":80,"Type":"tcp"}'
+        example:
+            PrivatePort: 8080
+            PublicPort: 80
+            Type: tcp
         properties:
             IP:
                 description: Host IP address that the container's port is mapped to
@@ -12336,6 +12339,14 @@ info:
     x-logo:
         - url: https://raw.githubusercontent.com/podman-container-tools/podman/main/logo/podman-logo.png
         - altText: Podman logo
+parameters:
+    libpodApiVersion:
+        description: Libpod API version. Use the Libpod-API-Version response header from GET /_ping.
+        in: path
+        name: version
+        pattern: ^[0-9][0-9A-Za-z.-]*$
+        required: true
+        type: string
 paths:
     /artifacts:
         post:

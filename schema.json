@@ -89,7 +89,7 @@
         },
         "name": {
           "type": "string",
-          "description": "Name is the name that should be used for the path inside the container. When a single blob\nis mounted the name is used as is. If multiple blobs are mounted then mount them as\n\"\u003cname\u003e-x\" where x is a 0 indexed integer based on the layer order.\nOptional."
+          "description": "Name is the name that should be used for the path inside the container. When a single blob\nis mounted the name is used as is. If multiple blobs are mounted then mount them as\n\"<name>-x\" where x is a 0 indexed integer based on the layer order.\nOptional."
         },
         "source": {
           "type": "string",
@@ -606,7 +606,7 @@
           "items": {
             "type": "string"
           },
-          "description": "Binds contains an array of user-added mounts.\nBoth volume mounts and named volumes are included.\nTmpfs mounts are NOT included.\nIn 'docker inspect' this is separated into 'Binds' and 'Mounts' based\non how a mount was added. We do not make this distinction and do not\ninclude a Mounts field in inspect.\nFormat: \u003csrc\u003e:\u003cdestination\u003e[:\u003ccomma-separated options\u003e]"
+          "description": "Binds contains an array of user-added mounts.\nBoth volume mounts and named volumes are included.\nTmpfs mounts are NOT included.\nIn 'docker inspect' this is separated into 'Binds' and 'Mounts' based\non how a mount was added. We do not make this distinction and do not\ninclude a Mounts field in inspect.\nFormat: <src>:<destination>[:<comma-separated options>]"
         },
         "blkioDeviceReadBps": {
           "type": "array",
@@ -675,7 +675,7 @@
         },
         "cgroupMode": {
           "type": "string",
-          "description": "CgroupMode is the configuration of the container's cgroup namespace.\nPopulated as follows:\nprivate - a cgroup namespace has been created\nhost - No cgroup namespace created\ncontainer:\u003cid\u003e - Using another container's cgroup namespace\nns:\u003cpath\u003e - A path to a cgroup namespace has been specified"
+          "description": "CgroupMode is the configuration of the container's cgroup namespace.\nPopulated as follows:\nprivate - a cgroup namespace has been created\nhost - No cgroup namespace created\ncontainer:<id> - Using another container's cgroup namespace\nns:<path> - A path to a cgroup namespace has been specified"
         },
         "cgroupParent": {
           "type": "string",
@@ -803,7 +803,7 @@
         },
         "ipcMode": {
           "type": "string",
-          "description": "IpcMode represents the configuration of the container's IPC\nnamespace.\nPopulated as follows:\n\"\" (empty string) - Default, an IPC namespace will be created\nhost - No IPC namespace created\ncontainer:\u003cid\u003e - Using another container's IPC namespace\nns:\u003cpath\u003e - A path to an IPC namespace has been specified"
+          "description": "IpcMode represents the configuration of the container's IPC\nnamespace.\nPopulated as follows:\n\"\" (empty string) - Default, an IPC namespace will be created\nhost - No IPC namespace created\ncontainer:<id> - Using another container's IPC namespace\nns:<path> - A path to an IPC namespace has been specified"
         },
         "isolation": {
           "type": "string",
@@ -845,7 +845,7 @@
         },
         "networkMode": {
           "type": "string",
-          "description": "NetworkMode is the configuration of the container's network\nnamespace.\nPopulated as follows:\ndefault - A network namespace is being created and configured\nnone - A network namespace is being created, not configured\nhost - No network namespace created\ncontainer:\u003cid\u003e - Using another container's network namespace\nns:\u003cpath\u003e - A path to a network namespace has been specified"
+          "description": "NetworkMode is the configuration of the container's network\nnamespace.\nPopulated as follows:\ndefault - A network namespace is being created and configured\nnone - A network namespace is being created, not configured\nhost - No network namespace created\ncontainer:<id> - Using another container's network namespace\nns:<path> - A path to a network namespace has been specified"
         },
         "oomKillDisable": {
           "type": "boolean",
@@ -857,7 +857,7 @@
         },
         "pidMode": {
           "type": "string",
-          "description": "PidMode represents the configuration of the container's PID\nnamespace.\nPopulated as follows:\n\"\" (empty string) - Default, a PID namespace will be created\nhost - No PID namespace created\ncontainer:\u003cid\u003e - Using another container's PID namespace\nns:\u003cpath\u003e - A path to a PID namespace has been specified"
+          "description": "PidMode represents the configuration of the container's PID\nnamespace.\nPopulated as follows:\n\"\" (empty string) - Default, a PID namespace will be created\nhost - No PID namespace created\ncontainer:<id> - Using another container's PID namespace\nns:<path> - A path to a PID namespace has been specified"
         },
         "pidsLimit": {
           "type": "integer",
@@ -865,7 +865,7 @@
         },
         "portBindings": {
           "type": "object",
-          "description": "PortBindings contains the container's port bindings.\nIt is formatted as map[string][]InspectHostPort.\nThe string key here is formatted as \u003cinteger port number\u003e/\u003cprotocol\u003e\nand represents the container port. A single container port may be\nbound to multiple host ports (on different IPs)."
+          "description": "PortBindings contains the container's port bindings.\nIt is formatted as map[string][]InspectHostPort.\nThe string key here is formatted as <integer port number>/<protocol>\nand represents the container port. A single container port may be\nbound to multiple host ports (on different IPs)."
         },
         "privileged": {
           "type": "boolean",
@@ -902,7 +902,7 @@
         },
         "uTSMode": {
           "type": "string",
-          "description": "UTSMode represents the configuration of the container's UID\nnamespace.\nPopulated as follows:\n\"\" (empty string) - Default, a UTS namespace will be created\nhost - no UTS namespace created\ncontainer:\u003cid\u003e - Using another container's UTS namespace\nns:\u003cpath\u003e - A path to a UTS namespace has been specified"
+          "description": "UTSMode represents the configuration of the container's UID\nnamespace.\nPopulated as follows:\n\"\" (empty string) - Default, a UTS namespace will be created\nhost - no UTS namespace created\ncontainer:<id> - Using another container's UTS namespace\nns:<path> - A path to a UTS namespace has been specified"
         },
         "ulimits": {
           "type": "array",
@@ -913,7 +913,7 @@
         },
         "usernsMode": {
           "type": "string",
-          "description": "UsernsMode represents the configuration of the container's user\nnamespace.\nWhen running rootless, a user namespace is created outside of libpod\nto allow some privileged operations. This will not be reflected here.\nPopulated as follows:\n\"\" (empty string) - No user namespace will be created\nprivate - The container will be run in a user namespace\ncontainer:\u003cid\u003e - Using another container's user namespace\nns:\u003cpath\u003e - A path to a user namespace has been specified\nTODO Rootless has an additional 'keep-id' option, presently not\nreflected here."
+          "description": "UsernsMode represents the configuration of the container's user\nnamespace.\nWhen running rootless, a user namespace is created outside of libpod\nto allow some privileged operations. This will not be reflected here.\nPopulated as follows:\n\"\" (empty string) - No user namespace will be created\nprivate - The container will be run in a user namespace\ncontainer:<id> - Using another container's user namespace\nns:<path> - A path to a user namespace has been specified\nTODO Rootless has an additional 'keep-id' option, presently not\nreflected here."
         },
         "volumeDriver": {
           "type": "string",
@@ -1518,7 +1518,7 @@
         },
         "pageSize": {
           "type": "string",
-          "description": "Pagesize is the hugepage size.\nFormat: \"\u003csize\u003e\u003cunit-prefix\u003eB' (e.g. 64KB, 2MB, 1GB, etc.)."
+          "description": "Pagesize is the hugepage size.\nFormat: \"<size><unit-prefix>B' (e.g. 64KB, 2MB, 1GB, etc.)."
         }
       },
       "type": "object"
@@ -1554,11 +1554,11 @@
         },
         "l3CacheSchema": {
           "type": "string",
-          "description": "The schema for L3 cache id and capacity bitmask (CBM)\nFormat: \"L3:\u003ccache_id0\u003e=\u003ccbm0\u003e;\u003ccache_id1\u003e=\u003ccbm1\u003e;...\"\nNOTE: Should not be specified if Schemata is non-empty."
+          "description": "The schema for L3 cache id and capacity bitmask (CBM)\nFormat: \"L3:<cache_id0>=<cbm0>;<cache_id1>=<cbm1>;...\"\nNOTE: Should not be specified if Schemata is non-empty."
         },
         "memBwSchema": {
           "type": "string",
-          "description": "The schema of memory bandwidth per L3 cache id\nFormat: \"MB:\u003ccache_id0\u003e=bandwidth0;\u003ccache_id1\u003e=bandwidth1;...\"\nThe unit of memory bandwidth is specified in \"percentages\" by\ndefault, and in \"MBps\" if MBA Software Controller is enabled.\nNOTE: Should not be specified if Schemata is non-empty."
+          "description": "The schema of memory bandwidth per L3 cache id\nFormat: \"MB:<cache_id0>=bandwidth0;<cache_id1>=bandwidth1;...\"\nThe unit of memory bandwidth is specified in \"percentages\" by\ndefault, and in \"MBps\" if MBA Software Controller is enabled.\nNOTE: Should not be specified if Schemata is non-empty."
         },
         "schemata": {
           "type": "array",
@@ -2140,6 +2140,41 @@
         }
       },
       "type": "object"
+    },
+    "podman:index:PerNetworkOptions": {
+      "type": "object",
+      "properties": {
+        "aliases": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "DNS aliases for this container on the network."
+        },
+        "interfaceName": {
+          "type": "string",
+          "description": "Network interface name inside the container."
+        },
+        "options": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          },
+          "description": "Driver-specific options for this network attachment."
+        },
+        "staticIps": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Static IP addresses on this network."
+        },
+        "staticMac": {
+          "type": "string",
+          "description": "Static MAC address on this network."
+        }
+      },
+      "description": "Per-network options when attaching a container or pod to a network."
     }
   },
   "provider": {
@@ -2608,6 +2643,9 @@
         },
         "networks": {
           "type": "object",
+          "additionalProperties": {
+            "$ref": "#/types/podman:index:PerNetworkOptions"
+          },
           "description": "Map of networks names or ids that the container should join.\nYou can request additional settings for each network, you can\nset network aliases, static ips, static mac address  and the\nnetwork interface name for this container on the specific network.\nIf the map is empty and the bridge network mode is set the container\nwill be joined to the default network.\nOptional."
         },
         "noNewPrivileges": {
@@ -3234,6 +3272,9 @@
         },
         "networks": {
           "type": "object",
+          "additionalProperties": {
+            "$ref": "#/types/podman:index:PerNetworkOptions"
+          },
           "description": "Map of networks names or ids that the container should join.\nYou can request additional settings for each network, you can\nset network aliases, static ips, static mac address  and the\nnetwork interface name for this container on the specific network.\nIf the map is empty and the bridge network mode is set the container\nwill be joined to the default network.\nOptional."
         },
         "noNewPrivileges": {
@@ -4019,6 +4060,9 @@
         },
         "networks": {
           "type": "object",
+          "additionalProperties": {
+            "$ref": "#/types/podman:index:PerNetworkOptions"
+          },
           "description": "Map of networks names to ids the container should join to.\nYou can request additional settings for each network, you can\nset network aliases, static ips, static mac address  and the\nnetwork interface name for this container on the specific network.\nIf the map is empty and the bridge network mode is set the container\nwill be joined to the default network."
         },
         "noInfra": {
@@ -4241,6 +4285,9 @@
         },
         "networks": {
           "type": "object",
+          "additionalProperties": {
+            "$ref": "#/types/podman:index:PerNetworkOptions"
+          },
           "description": "Map of networks names to ids the container should join to.\nYou can request additional settings for each network, you can\nset network aliases, static ips, static mac address  and the\nnetwork interface name for this container on the specific network.\nIf the map is empty and the bridge network mode is set the container\nwill be joined to the default network."
         },
         "noInfra": {

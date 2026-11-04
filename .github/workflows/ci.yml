@@ -62,6 +62,25 @@ jobs:
           npm run build
           npm pack --dry-run
 
+      - name: TypeScript playground
+        run: |
+          make build
+          sudo apt-get update
+          sudo apt-get install -y podman || true
+          cd playground
+          npm ci
+          npm run build
+          if ! command -v podman >/dev/null 2>&1 || ! podman info >/dev/null 2>&1; then
+            echo "Podman unavailable; skipping pulumi preview (TypeScript compile already verified)"
+            exit 0
+          fi
+          mkdir -p .pulumi-state
+          export PULUMI_BACKEND_URL="file://$(pwd)/.pulumi-state"
+          export PULUMI_CONFIG_PASSPHRASE=""
+          export PULUMI_SKIP_UPDATE_CHECK=true
+          pulumi stack select dev --non-interactive 2>/dev/null || pulumi stack init dev --non-interactive
+          pulumi preview --non-interactive --stack dev
+
       - name: Pack NuGet SDK
         working-directory: sdk/dotnet
         run: |

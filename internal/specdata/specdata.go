@@ -6,6 +6,7 @@ import (
 	"fmt"
 
 	openapi "github.com/pierskarsenbarg/pulumi-openapi-provider"
+	"github.com/geoffsee/pulumi-podman/internal/readstate"
 	p "github.com/pulumi/pulumi-go-provider"
 	"github.com/pulumi/pulumi/sdk/v3/go/property"
 )
@@ -22,14 +23,15 @@ var PathMap []byte
 
 // Overrides maps discovered OpenAPI resource names onto Pulumi tokens and ID fields.
 func Overrides() map[string]openapi.ResourceOverride {
+	read := readstate.Hooks()
 	return map[string]openapi.ResourceOverride{
 		"*":          {Diff: ignoreOutputOnlyDiff},
-		"Volumes":    {Token: "podman:volumes:Volume", IDField: "Name"},
-		"Containers": {Token: "podman:containers:Container", IDField: "Id", Diff: replaceOnInputDiff},
-		"Pods":       {Token: "podman:pods:Pod", IDField: "Id", Diff: replaceOnInputDiff},
-		"Networks":   {Token: "podman:networks:Network", IDField: "id"},
+		"Volumes":    {Token: "podman:volumes:Volume", IDField: "Name", Read: read["Volumes"]},
+		"Containers": {Token: "podman:containers:Container", IDField: "Id", Diff: replaceOnInputDiff, Read: read["Containers"]},
+		"Pods":       {Token: "podman:pods:Pod", IDField: "Id", Diff: replaceOnInputDiff, Read: read["Pods"]},
+		"Networks":   {Token: "podman:networks:Network", IDField: "id", Read: read["Networks"]},
 		"Secrets":    {Token: "podman:secrets:Secret", IDField: "ID"},
-		"Images":     {Token: "podman:images:Image", IDField: "id"},
+		"Images":     {Token: "podman:images:Image", IDField: "id", Read: read["Images"]},
 		"Artifacts":  {Token: "podman:artifacts:Artifact"},
 		"Quadlets":   {Skip: true},
 	}
