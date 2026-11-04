@@ -10,6 +10,7 @@ cd "$root"
 if [[ ! -f schema.json ]]; then
 	make schema
 fi
+python3 scripts/patch-schema.py schema.json
 
 state="$(mktemp -d)"
 mkdir -p "$state/state"
@@ -34,6 +35,9 @@ pkg["publishConfig"] = {"registry": "https://npm.pkg.github.com"}
 repo = pkg.get("repository")
 if isinstance(repo, str):
     pkg["repository"] = {"type": "git", "url": repo if repo.endswith(".git") else repo + ".git"}
+scripts = pkg.get("scripts") or {}
+scripts["build"] = "tsc && cp package.json bin/package.json"
+pkg["scripts"] = scripts
 Path("sdk/nodejs/package.json").write_text(json.dumps(pkg, indent=4) + "\n")
 Path("sdk/nodejs/.npmignore").write_text(
     "node_modules/\n*.ts\n!bin/**/*.d.ts\ntsconfig.json\n.gitattributes\n.gitignore\n"

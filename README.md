@@ -70,7 +70,7 @@ const data = new podman.volumes.Volume("data", {
 export const volumeName = data.name;
 ```
 
-See [`examples/yaml`](examples/yaml) for a program you can run against a local engine.
+See [`examples/yaml`](examples/yaml) for a YAML program and [`playground`](playground) for TypeScript (`make playground`).
 
 ## Resources
 

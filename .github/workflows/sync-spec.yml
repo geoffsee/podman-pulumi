@@ -77,7 +77,13 @@ jobs:
       - name: Test
         id: test
         if: steps.detect.outputs.changed == 'true' || steps.detect.outputs.force == 'true'
-        run: go test ./...
+        run: |
+          go test ./...
+          make build
+          # When the swagger changed, schema.json is refreshed in Publish (same commit).
+          if [[ "${{ steps.detect.outputs.changed }}" != 'true' ]]; then
+            make check-schema
+          fi
 
       - name: Publish release
         if: steps.detect.outputs.changed == 'true' || steps.detect.outputs.force == 'true'

@@ -45,11 +45,15 @@ func Adapt(swaggerYAML []byte) (Result, error) {
 	}
 
 	// Only the Libpod API. Compat endpoints duplicate the same resources.
+	// Upstream swagger 6.x lists versioned paths (/v{version}/libpod/...) as well as
+	// legacy /libpod/... entries.
 	libpod := map[string]any{}
 	for p, item := range rawPaths {
-		if strings.HasPrefix(p, "/libpod/") {
-			libpod[p] = item
+		canonical, ok := canonicalLibpodAPIPath(p)
+		if !ok {
+			continue
 		}
+		libpod[canonical] = item
 	}
 
 	rules := []Rule{}
@@ -554,6 +558,22 @@ func splitPath(p string) []string {
 		}
 	}
 	return segs
+}
+
+// canonicalLibpodAPIPath maps /libpod/foo and /v{version}/libpod/foo to /libpod/foo.
+func canonicalLibpodAPIPath(p string) (string, bool) {
+	segs := splitPath(p)
+	libpodIdx := -1
+	for i, s := range segs {
+		if s == "libpod" {
+			libpodIdx = i
+			break
+		}
+	}
+	if libpodIdx < 0 {
+		return "", false
+	}
+	return "/libpod/" + strings.Join(segs[libpodIdx+1:], "/"), true
 }
 
 func pathItem(paths map[string]any, p string) map[string]any {

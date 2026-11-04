@@ -1,0 +1,8 @@
+name: podman-playground
+runtime: nodejs
+description: TypeScript playground for the Podman Pulumi provider.
+
+plugins:
+  providers:
+    - name: podman
+      path: ..

@@ -2,6 +2,26 @@ package specadapt
 
 import "testing"
 
+func TestCanonicalLibpodAPIPath(t *testing.T) {
+	t.Parallel()
+	cases := []struct {
+		in      string
+		want    string
+		wantOK  bool
+	}{
+		{"/libpod/containers/create", "/libpod/containers/create", true},
+		{"/v{version}/libpod/containers/{name}/json", "/libpod/containers/{name}/json", true},
+		{"/auth", "", false},
+		{"/build", "", false},
+	}
+	for _, tc := range cases {
+		got, ok := canonicalLibpodAPIPath(tc.in)
+		if ok != tc.wantOK || got != tc.want {
+			t.Errorf("canonicalLibpodAPIPath(%q) = (%q, %v), want (%q, %v)", tc.in, got, ok, tc.want, tc.wantOK)
+		}
+	}
+}
+
 func TestPrefixPath(t *testing.T) {
 	t.Parallel()
 	cases := []struct {

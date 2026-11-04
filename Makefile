@@ -3,7 +3,7 @@ VERSION  ?= $(shell tr -d ' \n' < VERSION)
 PROVIDER := bin/pulumi-resource-podman
 SCHEMA   := schema.json
 
-.PHONY: generate generate-local build dist test schema check-schema sdk publish-sdks install example
+.PHONY: generate generate-local build dist test schema check-schema sdk publish-sdks install example playground
 
 generate:
 	mkdir -p spec internal/specdata
@@ -36,8 +36,9 @@ schema: build
 		pulumi package get-schema ./$(PROVIDER) > "$$tmpdir/schema.json" && \
 	$(PULUMI_SCHEMA_ENV) PULUMI_BACKEND_URL="file://$$tmpdir/state" \
 		pulumi schema check "$$tmpdir/schema.json" && \
-	mv "$$tmpdir/schema.json" $(SCHEMA) && \
+		mv "$$tmpdir/schema.json" $(SCHEMA) && \
 	rm -rf "$$tmpdir"
+	python3 scripts/patch-schema.py $(SCHEMA)
 	@echo "Wrote $(SCHEMA)"
 
 check-schema: schema
@@ -64,4 +65,20 @@ example: build
 	cd examples/yaml && \
 		PULUMI_BACKEND_URL="file://$$PWD/.pulumi-state" \
 		PULUMI_CONFIG_PASSPHRASE="$${PULUMI_CONFIG_PASSPHRASE-}" \
+		pulumi preview --non-interactive --stack dev --diff
+
+playground: build
+	@test -f sdk/nodejs/bin/index.js || (echo "Run 'make sdk' and build sdk/nodejs first" >&2; exit 1)
+	cd sdk/nodejs && npm install && npm run build
+	cd playground && npm install && npm run build
+	mkdir -p playground/.pulumi-state
+	cd playground && \
+		PULUMI_BACKEND_URL="file://$$PWD/.pulumi-state" \
+		PULUMI_CONFIG_PASSPHRASE="$${PULUMI_CONFIG_PASSPHRASE-}" \
+		PULUMI_SKIP_UPDATE_CHECK=true \
+		sh -c 'pulumi stack select dev --non-interactive 2>/dev/null || pulumi stack init dev --non-interactive'
+	cd playground && \
+		PULUMI_BACKEND_URL="file://$$PWD/.pulumi-state" \
+		PULUMI_CONFIG_PASSPHRASE="$${PULUMI_CONFIG_PASSPHRASE-}" \
+		PULUMI_SKIP_UPDATE_CHECK=true \
 		pulumi preview --non-interactive --stack dev --diff

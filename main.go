@@ -11,6 +11,7 @@ import (
 
 	openapi "github.com/pierskarsenbarg/pulumi-openapi-provider"
 
+	"github.com/geoffsee/pulumi-podman/internal/readstate"
 	"github.com/geoffsee/pulumi-podman/internal/specadapt"
 	"github.com/geoffsee/pulumi-podman/internal/specdata"
 	"github.com/geoffsee/pulumi-podman/internal/transport"
@@ -48,6 +49,7 @@ func run() error {
 	}
 
 	conn := detectConn()
+	readstate.Client = transport.New(conn, rules)
 
 	opts := openapi.Options{
 		SpecPath:       specFile,
