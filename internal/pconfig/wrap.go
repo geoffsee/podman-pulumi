@@ -4,6 +4,8 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"os"
+	"strings"
 
 	"github.com/geoffsee/pulumi-podman/internal/transport"
 	p "github.com/pulumi/pulumi-go-provider"
@@ -63,9 +65,31 @@ func Wrap(prov p.Provider, endpoint *transport.Endpoint) p.Provider {
 				return err
 			}
 		}
-		return endpoint.Apply(SourceFromConfigure(req))
+		return configureEndpoint(endpoint, SourceFromConfigure(req))
 	}
 	return prov
+}
+
+func configureEndpoint(endpoint *transport.Endpoint, src transport.Source) error {
+	if err := endpoint.Apply(src); err != nil {
+		if connectionExplicitlySet(src) {
+			return err
+		}
+		_ = endpoint.Apply(transport.Source{ConnectionURI: "unix:///run/podman/podman.sock"})
+	}
+	return nil
+}
+
+func connectionExplicitlySet(src transport.Source) bool {
+	if strings.TrimSpace(src.ConnectionURI) != "" {
+		return true
+	}
+	for _, env := range []string{"CONTAINER_HOST", "PODMAN_HOST"} {
+		if strings.TrimSpace(os.Getenv(env)) != "" {
+			return true
+		}
+	}
+	return false
 }
 
 func patchSchema(raw string) (string, error) {
