@@ -77,7 +77,6 @@ func run() error {
 
 	builder := infer.NewProviderBuilder().
 		WithWrapped(dyn).
-		WithConfig(pconfig.NewConfig(endpoint)).
 		WithDisplayName("Podman").
 		WithDescription("The Pulumi Podman provider manages containers, pods, images, volumes, networks, secrets, and artifacts through the Libpod REST API.").
 		WithHomepage(repositoryURL).
@@ -118,7 +117,7 @@ func run() error {
 			},
 		})
 
-	prov := infer.Provider(builder.BuildOptions())
+	prov := pconfig.Wrap(infer.Provider(builder.BuildOptions()), endpoint)
 	return provider.RunProvider(context.Background(), providerName, providerVersion, prov)
 }
 

@@ -96,17 +96,12 @@ plugins:
     - name: podman
       path: %s
 resources:
-  podman:
-    type: pulumi:providers:podman
-    defaultProvider: true
   vol:
     type: podman:volumes:Volume
     properties:
       name: %s
       labels:
         pulumi-podman-test: "1"
-    options:
-      provider: ${podman}
 `, filepath.ToSlash(providerPath), volumeName)
 	if err := os.WriteFile(filepath.Join(dir, "Pulumi.yaml"), []byte(yaml), 0o644); err != nil {
 		t.Fatal(err)
@@ -169,6 +164,13 @@ func TestProviderGetSchema(t *testing.T) {
 	for _, want := range []string{"category/infrastructure", "kind/native"} {
 		if !got[want] {
 			t.Errorf("keywords missing %s: %v", want, keywords)
+		}
+	}
+	vars, _ := schema["config"].(map[string]any)
+	variables, _ := vars["variables"].(map[string]any)
+	for _, key := range []string{"connectionUri", "sshPrivateKey", "baseUrl"} {
+		if _, ok := variables[key]; !ok {
+			t.Errorf("schema config missing %s", key)
 		}
 	}
 }
@@ -243,13 +245,9 @@ func TestPulumiVolumeImport(t *testing.T) {
 	dir := t.TempDir()
 	writeVolumeProgram(t, dir, pluginDir, name)
 	runPulumi(t, dir, "stack", "init", "dev", "--non-interactive")
-	providerURN := "urn:pulumi:dev::pt-pulumi::pulumi:providers:podman::podman"
-	runPulumi(t, dir, "up", "--yes", "--non-interactive", "--skip-preview",
-		"--target", providerURN)
 	runPulumi(t, dir, "import", "podman:volumes:Volume", "vol", name,
 		"--yes", "--non-interactive", "--skip-preview",
-		"--protect=false", "--generate-code=false",
-		"--provider", "podman="+providerURN)
+		"--protect=false", "--generate-code=false")
 	runPulumi(t, dir, "preview", "--non-interactive", "--expect-no-changes")
 	runPulumi(t, dir, "destroy", "--yes", "--non-interactive", "--skip-preview")
 	code, _ = doJSON(t, client, http.MethodGet, "/volumes/"+name, nil)

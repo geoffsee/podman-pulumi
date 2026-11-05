@@ -61,6 +61,28 @@
         "type": "string",
         "description": "Bearer token for the Authorization header.",
         "secret": true
+      },
+      "connectionUri": {
+        "type": "string",
+        "description": "Podman connection URI (unix://, tcp://, or ssh://). Overrides CONTAINER_HOST when set."
+      },
+      "sshIdentityFile": {
+        "type": "string",
+        "description": "Path to the SSH private key for ssh:// connections. Also set via CONTAINER_SSHKEY."
+      },
+      "sshKnownHosts": {
+        "type": "string",
+        "description": "Path to an SSH known_hosts file. Defaults to ~/.ssh/known_hosts when present."
+      },
+      "sshPassword": {
+        "type": "string",
+        "description": "SSH password when the server requires password authentication.",
+        "secret": true
+      },
+      "sshPrivateKey": {
+        "type": "string",
+        "description": "SSH private key PEM for ssh:// connections. Prefer this over putting keys in stack outputs.",
+        "secret": true
       }
     }
   },

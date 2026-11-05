@@ -6,7 +6,7 @@ Run the generated [`@geoffsee/podman`](../../sdk/nodejs) SDK against a locally b
 
 - [Pulumi CLI](https://www.pulumi.com/docs/install/)
 - Node.js 20+
-- A Podman API socket (see the [root README](../README.md#configuration))
+- A reachable Podman API (local socket, TCP, or SSH — see [Configuration](../README.md#configuration) in the root README)
 
 Generate and build the Node.js SDK once (or after schema changes):
 
