@@ -35,21 +35,39 @@ if [[ -z "$version" ]]; then
 	exit 1
 fi
 
+if [[ ${#GROVE_API_KEY} -lt 8 || ${GROVE_API_KEY} != grv_* ]]; then
+	echo "GROVE_API_KEY must be a Grove API token (grv_...)" >&2
+	exit 1
+fi
+
 echo "Publishing podman ${version} to ${grove_url}"
+
+# Confirm the token is accepted before the long build. A bad document is 400; a rejected token is 401.
+auth_status="$(
+	curl -sS -o /dev/null -w '%{http_code}' \
+		-X PUT \
+		-H "Authorization: Bearer ${GROVE_API_KEY}" \
+		-H "Content-Type: application/json" \
+		--data '{}' \
+		"${grove_url}/npm/@geoffsee%2fpodman"
+)"
+echo "Grove token probe status: ${auth_status}"
+if [[ "$auth_status" != "400" && "$auth_status" != "409" ]]; then
+	echo "Grove rejected GROVE_API_KEY (expected 400 from an empty publish body)" >&2
+	exit 1
+fi
 
 bash scripts/dist.sh
 bash scripts/gen-sdk.sh
 
 (
 	cd sdk/nodejs
-	cat >.npmrc <<EOF
-@geoffsee:registry=${grove_url}/npm
-//${host}/npm/:_authToken=\${NODE_AUTH_TOKEN}
-always-auth=true
-EOF
+	npm config set "@geoffsee:registry" "${grove_url}/npm/"
+	npm config set "//${host}/npm/:_authToken" "$GROVE_API_KEY"
+	npm pkg delete publishConfig.registry
 	npm install
 	npm run build
-	NODE_AUTH_TOKEN="$GROVE_API_KEY" npm publish --registry "${grove_url}/npm"
+	npm publish --registry "${grove_url}/npm/"
 )
 
 (
