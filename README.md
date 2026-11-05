@@ -27,6 +27,8 @@ A GitHub token with `read:packages` is required to install the TypeScript, .NET,
 
 Point the provider at a running Podman API. No Pulumi config is required for a local engine.
 
+### Local socket (default)
+
 The provider checks these in order:
 
 1. `CONTAINER_HOST`
@@ -37,6 +39,26 @@ The provider checks these in order:
 ```sh
 export CONTAINER_HOST=unix:///run/user/1000/podman/podman.sock
 ```
+
+### Remote over SSH
+
+Use an `ssh://` URI (same shape as `podman system connection`) and supply credentials via Pulumi provider config or environment variables—not stack outputs.
+
+```yaml
+config:
+  podman:connectionUri: ssh://deploy@host.example/run/user/1000/podman/podman.sock
+  podman:sshPrivateKey:
+    secure: PLAINTEXT
+```
+
+Or:
+
+```sh
+export CONTAINER_HOST='ssh://deploy@host.example/run/user/1000/podman/podman.sock'
+export CONTAINER_SSHKEY="$HOME/.ssh/id_ed25519"
+```
+
+Provider config keys: `connectionUri`, `sshIdentityFile`, `sshPrivateKey` (secret), `sshPassword` (secret), `sshKnownHosts`. Pulumi config overrides `CONTAINER_HOST` when `connectionUri` is set.
 
 On macOS and Windows this is the [Podman machine](https://docs.podman.io/en/latest/markdown/podman-machine.1.html) socket. Start the API if it is not already listening:
 

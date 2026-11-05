@@ -27,7 +27,7 @@ func TestParseConn(t *testing.T) {
 		{in: "http://[::1", err: "missing ']' in host"},
 		{in: "", err: "empty connection URI"},
 		{in: "   ", err: "empty connection URI"},
-		{in: "ssh://user@host", err: "ssh connections are not supported"},
+		{in: "ssh://user@host", err: "ssh connections use podman:connectionUri"},
 		{in: "ftp://host", err: "unsupported connection URI"},
 	}
 	for _, tc := range cases {

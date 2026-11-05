@@ -189,11 +189,22 @@ Environment variables that select the engine (not Pulumi config keys):
 
 | Variable | Required? | Description |
 | --- | --- | --- |
-| `CONTAINER_HOST` | no | Podman connection URI, for example `unix:///run/podman/podman.sock` or `tcp://127.0.0.1:8080`. Tried first. |
+| `CONTAINER_HOST` | no | Podman connection URI, for example `unix:///run/podman/podman.sock`, `tcp://127.0.0.1:8080`, or `ssh://user@host/run/user/1000/podman/podman.sock`. Tried first unless `connectionUri` is set in provider config. |
 | `PODMAN_HOST` | no | Same as `CONTAINER_HOST`, used when `CONTAINER_HOST` is unset. |
+| `CONTAINER_SSHKEY` | no | Path to the SSH private key for `ssh://` URIs when not using `sshIdentityFile` / `sshPrivateKey` in provider config. |
 | `PODMAN_API_VERSION` | no | Libpod API version prefix such as `5.0.0`. The provider otherwise uses the version baked from the swagger spec. Set this when the running engine is older than the spec. |
 
-If neither host variable is set, the provider probes `$XDG_RUNTIME_DIR/podman/podman.sock`, then common rootful and `podman machine` socket paths.
+Pulumi provider config (optional):
+
+| Name | Secret? | Description |
+| --- | --- | --- |
+| `connectionUri` | no | Overrides `CONTAINER_HOST` / `PODMAN_HOST`. Supports `ssh://` with the provider SSH settings below. |
+| `sshIdentityFile` | no | Path to an SSH private key file. |
+| `sshPrivateKey` | yes | SSH private key PEM. Use for CI instead of writing keys to stack outputs. |
+| `sshPassword` | yes | SSH password when required by the server. |
+| `sshKnownHosts` | no | Path to a `known_hosts` file. Defaults to `~/.ssh/known_hosts` when present. |
+
+If neither host variable is set, the provider probes `$XDG_RUNTIME_DIR/podman/podman.sock`, then common rootful and `podman machine` socket paths. For `ssh://`, the provider opens an SSH session and dials the remote Podman socket over that connection.
 
 Start the API if it is not already running:
 
