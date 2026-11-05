@@ -30,7 +30,11 @@ func requireEngine(t *testing.T) (transport.Conn, *http.Client) {
 		t.Fatal(err)
 	}
 	t.Setenv("PODMAN_API_VERSION", "")
-	return conn, transport.New(conn, rules)
+	ep := transport.NewEndpoint()
+	if err := ep.Apply(transport.Source{ConnectionURI: fmt.Sprintf("unix://%s", conn.Address)}); err != nil {
+		t.Fatal(err)
+	}
+	return conn, transport.New(ep, rules)
 }
 
 func TestLiveEngineCRUD(t *testing.T) {

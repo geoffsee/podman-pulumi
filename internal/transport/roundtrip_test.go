@@ -87,10 +87,26 @@ func serve(t *testing.T, network string, h http.Handler) Conn {
 	return Conn{Network: network, Address: addr}
 }
 
+func endpointForConn(t *testing.T, conn Conn) *Endpoint {
+	t.Helper()
+	ep := NewEndpoint()
+	if err := ep.Apply(Source{ConnectionURI: conn.Network + "://" + conn.Address}); err != nil {
+		// unix paths are stored without scheme prefix in Conn.Address
+		if conn.Network == "unix" {
+			if err2 := ep.Apply(Source{ConnectionURI: "unix://" + conn.Address}); err2 != nil {
+				t.Fatal(err2)
+			}
+		} else {
+			t.Fatal(err)
+		}
+	}
+	return ep
+}
+
 func newClient(t *testing.T, conn Conn, rules []specadapt.Rule) *http.Client {
 	t.Helper()
 	t.Setenv("PODMAN_API_VERSION", "")
-	return New(conn, rules)
+	return New(endpointForConn(t, conn), rules)
 }
 
 func do(t *testing.T, client *http.Client, method, path string, body io.Reader) *http.Response {
@@ -388,7 +404,7 @@ func TestNewAppliesPODMAN_API_VERSION(t *testing.T) {
 		w.WriteHeader(http.StatusOK)
 		_, _ = w.Write([]byte(`{}`))
 	}}
-	client := New(serve(t, "unix", eng), []specadapt.Rule{{
+	client := New(endpointForConn(t, serve(t, "unix", eng)), []specadapt.Rule{{
 		Method:         "POST",
 		AdaptedPath:    "/volumes",
 		UpstreamMethod: "POST",

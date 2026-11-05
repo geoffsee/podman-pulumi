@@ -166,6 +166,13 @@ func TestProviderGetSchema(t *testing.T) {
 			t.Errorf("keywords missing %s: %v", want, keywords)
 		}
 	}
+	vars, _ := schema["config"].(map[string]any)
+	variables, _ := vars["variables"].(map[string]any)
+	for _, key := range []string{"connectionUri", "sshPrivateKey", "baseUrl"} {
+		if _, ok := variables[key]; !ok {
+			t.Errorf("schema config missing %s", key)
+		}
+	}
 }
 
 func TestProviderGetSchemaWithoutEngine(t *testing.T) {

@@ -10,7 +10,11 @@ import (
 	"strings"
 
 	openapi "github.com/pierskarsenbarg/pulumi-openapi-provider"
+	"github.com/pulumi/pulumi-go-provider"
+	"github.com/pulumi/pulumi-go-provider/infer"
 
+	"github.com/geoffsee/pulumi-podman/internal/openapibridge"
+	"github.com/geoffsee/pulumi-podman/internal/pconfig"
 	"github.com/geoffsee/pulumi-podman/internal/readstate"
 	"github.com/geoffsee/pulumi-podman/internal/specadapt"
 	"github.com/geoffsee/pulumi-podman/internal/specdata"
@@ -48,23 +52,31 @@ func run() error {
 		return fmt.Errorf("parse path map: %w", err)
 	}
 
-	conn := detectConn()
-	readstate.Client = transport.New(conn, rules)
+	endpoint := transport.NewEndpoint()
+	if err := bootstrapEndpoint(endpoint); err != nil {
+		fmt.Fprintf(os.Stderr, "warning: %v\n", err)
+	}
+	defer func() { _ = endpoint.Close() }()
+
+	client := transport.New(endpoint, rules)
+	readstate.Client = client
 
 	opts := openapi.Options{
 		SpecPath:       specFile,
 		BaseURL:        "http://d",
-		HTTPClient:     transport.New(conn, rules),
+		HTTPClient:     client,
 		UserAgent:      "pulumi-podman/" + providerVersion,
 		DisablePolling: false,
 		Overrides:      specdata.Overrides(),
 	}
 
-	builder, err := openapi.NewProviderBuilder(providerName, providerVersion, opts)
+	dyn, err := openapibridge.DynamicProvider(providerName, providerVersion, opts)
 	if err != nil {
 		return err
 	}
-	builder.
+
+	builder := infer.NewProviderBuilder().
+		WithWrapped(dyn).
 		WithDisplayName("Podman").
 		WithDescription("The Pulumi Podman provider manages containers, pods, images, volumes, networks, secrets, and artifacts through the Libpod REST API.").
 		WithHomepage(repositoryURL).
@@ -105,7 +117,8 @@ func run() error {
 			},
 		})
 
-	return builder.Run(context.Background())
+	prov := pconfig.Wrap(infer.Provider(builder.BuildOptions()), endpoint)
+	return provider.RunProvider(context.Background(), providerName, providerVersion, prov)
 }
 
 func writeTempSpec() (string, func(), error) {
@@ -121,13 +134,11 @@ func writeTempSpec() (string, func(), error) {
 	return path, func() { _ = os.RemoveAll(dir) }, nil
 }
 
-// detectConn returns the Podman socket, or a dummy unix path so schema
-// generation works when no engine is running.
-func detectConn() transport.Conn {
-	conn, err := transport.DetectConn()
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "warning: %v\n", err)
-		return transport.Conn{Network: "unix", Address: "/run/podman/podman.sock"}
+func bootstrapEndpoint(endpoint *transport.Endpoint) error {
+	src := transport.SourceFromEnv()
+	if err := endpoint.Apply(src); err != nil {
+		endpoint.Apply(transport.Source{ConnectionURI: "unix:///run/podman/podman.sock"})
+		return err
 	}
-	return conn
+	return nil
 }

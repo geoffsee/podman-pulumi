@@ -1,6 +1,6 @@
 ---
 title: Podman
-meta_desc: Use the Pulumi Podman provider to manage containers, pods, images, volumes, networks, secrets, and artifacts.
+meta_desc: Manage Podman containers, pods, images, volumes, networks, secrets, and artifacts with Pulumi—local sockets, TCP, or remote SSH.
 layout: package
 ---
 
@@ -76,13 +76,13 @@ pulumi package add podman
 
 ## Example Usage
 
-A local [Podman](https://podman.io) engine must be running and reachable. Point the provider at the API socket before `pulumi up`:
+A [Podman](https://podman.io) engine must be running and reachable (local socket, TCP, or remote over SSH). For a local engine, point the provider at the API before `pulumi up`:
 
 ```bash
 export CONTAINER_HOST=unix:///run/podman/podman.sock
 ```
 
-On a rootless Linux user session the socket is typically `$XDG_RUNTIME_DIR/podman/podman.sock`. On macOS and Windows it is the [Podman machine](https://docs.podman.io/en/latest/markdown/podman-machine.1.html) socket. No `pulumi config set` values are required for a local engine.
+On a rootless Linux user session the socket is typically `$XDG_RUNTIME_DIR/podman/podman.sock`. On macOS and Windows it is the [Podman machine](https://docs.podman.io/en/latest/markdown/podman-machine.1.html) socket. No `pulumi config set` values are required for a local engine. See [Configuration](#configuration) for remote `ssh://` URIs and stack secrets.
 
 {{< chooser language "typescript,python,go,csharp,yaml" >}}
 {{% choosable language typescript %}}
@@ -176,30 +176,89 @@ outputs:
 
 ## Configuration
 
-The provider talks to the Podman API over a unix socket or TCP. Connection settings are read from the process environment rather than Pulumi config. A local engine needs none of the Pulumi config keys below.
+The provider talks to the Podman API over a unix socket, TCP, or an SSH tunnel to a remote unix socket. A local engine needs no Pulumi config keys.
+
+### Connection resolution order
+
+1. Pulumi provider config — `connectionUri` and SSH keys on the default or explicit provider.
+2. Environment — `CONTAINER_HOST`, then `PODMAN_HOST`; `CONTAINER_SSHKEY` for SSH key file path when `sshIdentityFile` is unset.
+3. Local socket probe — `$XDG_RUNTIME_DIR/podman/podman.sock`, then common rootful and Podman machine paths.
+
+`connectionUri` in stack config overrides `CONTAINER_HOST` / `PODMAN_HOST`.
+
+### Pulumi provider config
 
 | Name | Required? | Secret? | Description |
 | --- | --- | --- | --- |
-| `baseUrl` | no | no | Dummy HTTP origin used with the unix/TCP transport. Defaults to `http://d`. Leave unset. |
-| `apiKey` | no | yes | Generic API key. Unused for a local Podman socket. |
-| `apiKeyHeader` | no | no | Header name for `apiKey`. Unused for a local Podman socket. |
-| `bearerToken` | no | yes | Bearer token for the `Authorization` header. Unused for a local Podman socket. |
+| `connectionUri` | no | no | `unix://`, `tcp://`, or `ssh://` URI. Overrides environment host variables. |
+| `sshIdentityFile` | no | no | Path to SSH private key for `ssh://`. Same role as `CONTAINER_SSHKEY`. |
+| `sshPrivateKey` | no | yes | SSH private key PEM for `ssh://`. Prefer stack secrets over outputs. |
+| `sshPassword` | no | yes | SSH password when the server requires it. |
+| `sshKnownHosts` | no | no | Path to SSH `known_hosts`. Defaults to `~/.ssh/known_hosts` when present. |
+| `baseUrl` | no | no | OpenAPI transport placeholder (`http://d`). Leave unset. |
+| `apiKey` | no | yes | OpenAPI generic key. Unused for Podman. |
+| `apiKeyHeader` | no | no | OpenAPI key header name. Unused for Podman. |
+| `bearerToken` | no | yes | OpenAPI bearer token. Unused for Podman. |
 
-Environment variables that select the engine (not Pulumi config keys):
+### Environment variables
 
 | Variable | Required? | Description |
 | --- | --- | --- |
-| `CONTAINER_HOST` | no | Podman connection URI, for example `unix:///run/podman/podman.sock` or `tcp://127.0.0.1:8080`. Tried first. |
-| `PODMAN_HOST` | no | Same as `CONTAINER_HOST`, used when `CONTAINER_HOST` is unset. |
-| `PODMAN_API_VERSION` | no | Libpod API version prefix such as `5.0.0`. The provider otherwise uses the version baked from the swagger spec. Set this when the running engine is older than the spec. |
+| `CONTAINER_HOST` | no | Connection URI: `unix://…`, `tcp://…`, or `ssh://user@host/…/podman.sock`. |
+| `PODMAN_HOST` | no | Same as `CONTAINER_HOST` when `CONTAINER_HOST` is unset. |
+| `CONTAINER_SSHKEY` | no | Path to SSH private key for `ssh://` when not using Pulumi `sshIdentityFile` / `sshPrivateKey`. |
+| `PODMAN_API_VERSION` | no | Libpod API version prefix (for example `5.0.0`) when the engine is older than the embedded spec. |
+| `SSH_AUTH_SOCK` | no | Optional ssh-agent socket for SSH authentication. |
 
-If neither host variable is set, the provider probes `$XDG_RUNTIME_DIR/podman/podman.sock`, then common rootful and `podman machine` socket paths.
+### Remote engines (`ssh://`)
 
-Start the API if it is not already running:
+URI form (same idea as `podman system connection`):
+
+```text
+ssh://[user[:password]@]host[:port]/path/to/podman.sock
+```
+
+Default SSH port is 22; default remote socket path is `/run/podman/podman.sock` when omitted. Authentication tries, in order: Pulumi `sshPrivateKey`, key file (`sshIdentityFile` or `CONTAINER_SSHKEY`), password in the URI or `sshPassword`, then keys from `SSH_AUTH_SOCK`.
+
+Example stack config:
+
+```yaml
+config:
+  podman:connectionUri: ssh://deploy@host.example/run/user/1000/podman/podman.sock
+  podman:sshPrivateKey:
+    secure: PLAINTEXT
+```
+
+Start a local API service if nothing is listening yet:
 
 ```bash
 podman system service --time=0
 ```
+
+## Importing existing resources
+
+Use `pulumi import` to adopt an object that already exists on the engine. The import ID is resource-specific (for volumes, the volume name). Add a matching resource to your program first:
+
+```yaml
+resources:
+  data:
+    type: podman:volumes:Volume
+    properties:
+      name: my-volume
+      labels:
+        app: demo
+```
+
+Then import and verify:
+
+```bash
+pulumi import podman:volumes:Volume data my-volume
+pulumi preview   # no changes when properties match the engine
+```
+
+Programs that rely on the **default** Podman provider do not need a separate `pulumi:providers:podman` resource.
+
+If the program declares an **explicit** `pulumi:providers:podman` and sets `options.provider` on resources, create that provider in the stack (`pulumi up --target <provider-urn>`), then import with `--provider 'podman=<provider-urn>'` so preview does not replace the resource because of a provider reference mismatch.
 
 ## Resources
 

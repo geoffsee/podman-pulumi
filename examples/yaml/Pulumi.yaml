@@ -1,6 +1,6 @@
 name: podman-example
 runtime: yaml
-description: Exercise the generated Podman provider against a local engine.
+description: Exercise the Podman provider against a local engine (see README.md in this folder).
 
 plugins:
   providers:

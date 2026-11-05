@@ -12,7 +12,6 @@ import (
 	"net/http"
 	"net/url"
 	"os"
-	"path/filepath"
 	"regexp"
 	"strings"
 	"time"
@@ -52,42 +51,27 @@ func ParseConn(raw string) (Conn, error) {
 		return Conn{Network: "tcp", Address: u.Host}, nil
 	}
 	if strings.HasPrefix(raw, "ssh://") {
-		return Conn{}, fmt.Errorf("ssh connections are not supported yet; set CONTAINER_HOST to a unix:// or tcp:// URI")
+		return Conn{}, fmt.Errorf("ssh connections use podman:connectionUri with sshIdentityFile or sshPrivateKey, or set CONTAINER_HOST=ssh://... with CONTAINER_SSHKEY")
 	}
 	return Conn{}, fmt.Errorf("unsupported connection URI %q", raw)
 }
 
-// DetectConn picks a Podman API endpoint from the environment.
+// DetectConn picks a local Podman API endpoint from the environment or common socket paths.
+// ssh:// URIs are not opened here; use Endpoint.Apply for SSH tunnels.
 func DetectConn() (Conn, error) {
 	for _, env := range []string{"CONTAINER_HOST", "PODMAN_HOST"} {
 		if v := os.Getenv(env); v != "" {
 			return ParseConn(v)
 		}
 	}
-	var candidates []string
-	if xdg := os.Getenv("XDG_RUNTIME_DIR"); xdg != "" {
-		candidates = append(candidates, filepath.Join(xdg, "podman", "podman.sock"))
-	}
-	if home, err := os.UserHomeDir(); err == nil {
-		candidates = append(candidates,
-			filepath.Join(home, ".local", "share", "containers", "podman", "machine", "podman.sock"),
-			filepath.Join(home, ".config", "containers", "podman", "machine", "podman.sock"),
-		)
-	}
-	candidates = append(candidates, "/run/podman/podman.sock", "/var/run/podman/podman.sock")
-	for _, p := range candidates {
-		if st, err := os.Stat(p); err == nil && !st.IsDir() {
-			return Conn{Network: "unix", Address: p}, nil
-		}
-	}
-	return Conn{}, fmt.Errorf("no Podman socket found; set CONTAINER_HOST (for example unix:///run/user/%d/podman/podman.sock)", os.Getuid())
+	return probeLocalSockets()
 }
 
 // RoundTripper rewrites REST paths and dials the Podman socket.
 type RoundTripper struct {
-	conn  Conn
-	rules []compiledRule
-	base  http.RoundTripper
+	endpoint *Endpoint
+	rules    []compiledRule
+	base     http.RoundTripper
 }
 
 type compiledRule struct {
@@ -122,8 +106,8 @@ func rewritePrefix(path, prefix string) string {
 	return path
 }
 
-// New returns an HTTP client that targets Podman.
-func New(conn Conn, rules []specadapt.Rule) *http.Client {
+// New returns an HTTP client that targets Podman through ep.
+func New(ep *Endpoint, rules []specadapt.Rule) *http.Client {
 	if v := os.Getenv("PODMAN_API_VERSION"); v != "" {
 		rules = RewriteAPIPrefix(rules, v)
 	}
@@ -131,15 +115,14 @@ func New(conn Conn, rules []specadapt.Rule) *http.Client {
 	for _, r := range rules {
 		compiled = append(compiled, compiledRule{Rule: r, re: pathRegexp(r.AdaptedPath)})
 	}
-	dialer := &net.Dialer{Timeout: 10 * time.Second}
 	return &http.Client{
 		Timeout: 15 * time.Minute,
 		Transport: &RoundTripper{
-			conn:  conn,
-			rules: compiled,
+			endpoint: ep,
+			rules:    compiled,
 			base: &http.Transport{
 				DialContext: func(ctx context.Context, _, _ string) (net.Conn, error) {
-					return dialer.DialContext(ctx, conn.Network, conn.Address)
+					return ep.Dial(ctx)
 				},
 				DisableCompression: true,
 			},
@@ -266,7 +249,7 @@ func ApplyRule(req *http.Request, rule specadapt.Rule, params map[string]string)
 		if err != nil {
 			return err
 		}
-		if len(raw) > 0 && (rule.BodyMode == "query" || rule.BodyMode == "rawString" || len(rule.QueryFromBody) > 0) {
+		if len(raw) > 0 && (rule.BodyMode == "query" || rule.BodyMode == "rawString" || len(rule.QueryFromBody) > 0 || strings.HasSuffix(up, "/libpod/containers/create")) {
 			_ = json.Unmarshal(raw, &body)
 		} else {
 			req.Body = io.NopCloser(bytes.NewReader(raw))
@@ -276,6 +259,24 @@ func ApplyRule(req *http.Request, rule specadapt.Rule, params map[string]string)
 	}
 
 	if body != nil {
+		// The OpenAPI runtime translates only top-level input aliases. Podman
+		// expects snake_case keys inside the generated PortMapping objects too.
+		if strings.HasSuffix(up, "/libpod/containers/create") {
+			if ports, ok := body["portmappings"].([]any); ok {
+				for _, port := range ports {
+					if mapping, ok := port.(map[string]any); ok {
+						for sdk, api := range map[string]string{
+							"containerPort": "container_port", "hostPort": "host_port", "hostIp": "host_ip",
+						} {
+							if value, exists := mapping[sdk]; exists {
+								mapping[api] = value
+								delete(mapping, sdk)
+							}
+						}
+					}
+				}
+			}
+		}
 		for _, name := range rule.QueryFromBody {
 			if v, ok := body[name]; ok {
 				q.Set(name, fmt.Sprint(v))
